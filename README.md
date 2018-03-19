@@ -94,21 +94,21 @@ This means, though, that your callbacks may behave in unexpected ways, if they a
 ````sh
 # Chained argument adding
 
-    $ event.on event2 event.on event1 echo "chain"
+    $ event.on event2 event.on event1 echo "chain to"
     $ event.on event2 event.fire event1 this
 
     $ event.fire event2 that
     Args: that
-    chain that this that
+    chain to that this that
 ````
 
 There's an extra, unexpected "that", because both of the `event2` callbacks receive it as an extra argument.  We can prevent this by specifying the maximum number of arguments we want our callbacks to receive, by adding an `^` and the number of arguments when subscribing to the event:
 
 ````sh
-    $ event.on "event2"^0 event.on event1 echo "chain"
+    $ event.on "event2"^0 event.on event1 echo "chain to"
     $ event.on "event2"^1 event.fire event1 this
     $ event.fire event2 that
-    chain this that
+    chain to this that
 ````
 
 `event.on`, `event.off`, and `event.has` all accept argument counts.  Callbacks with different argument counts are considered to be different callbacks:
@@ -169,12 +169,12 @@ There's an extra, unexpected "that", because both of the `event2` callbacks rece
 
 #### event.argn
 
-`event.argn` *cmd number args...* invokes *cmd* with the first *number* arguments of *args...*.  Word splitting is applied to *cmd*, meaning that if you pass a string like `"foo bar"` , it will run `foo bar arg1 arg2...`, not `"foo bar" arg1 arg2...`.  This function is used internally to wrap callbacks with limited argument counts.
+`event.argn` *count cmd args...* invokes *cmd* with the first *count* arguments of *args*.  (This function is used internally to wrap callbacks with limited argument counts.)
 
 ````sh
-    $ event.argn echo 2 a b c
+    $ event.argn 2 echo a b c
     a b
-    $ event.argn "echo foo" 0 a
+    $ event.argn 1 echo foo a
     foo
 ````
 
