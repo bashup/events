@@ -4,9 +4,9 @@ event.valid(){ [[ ${1-} =~ ^[_[:alnum:]]+$ ]];}
 event.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
 event.__cb() {
 	(($1!=1))||{ echo "${2-}: missing callback">&2;exit 64;}
-	[[ ${2-} =~ ^[_[:alnum:]]+(@[0-9]+)?$ ]]||{ echo "Invalid event name '${2-}'">&2;exit 64;}
-	event.quote "${@:3}"; [[ ! "${BASH_REMATCH[1]}" ]]||!(($1))||printf -v REPLY "event.argn %q ${2##*@}" "$REPLY"
-	REPLY+=$'\n'; e="bashup_evt_${2%@*}"; [[ $'\n'"${!e-}" == *$'\n'"$REPLY"* ]]
+	[[ ${2-} =~ ^[_[:alnum:]]+(\^[0-9]+)?$ ]]||{ echo "Invalid event name '${2-}'">&2;exit 64;}
+	event.quote "${@:3}"; [[ ! "${BASH_REMATCH[1]}" ]]||!(($1))||printf -v REPLY "event.argn %q ${2##*^}" "$REPLY"
+	REPLY+=$'\n'; e="bashup_evt_${2%^*}"; [[ $'\n'"${!e-}" == *$'\n'"$REPLY"* ]]
 }
 event.has(){ local e; event.__cb $# "$@";}
 event.on() { local e; event.__cb $# "$@"||eval $e='"${!e-}$REPLY"';}

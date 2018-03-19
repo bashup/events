@@ -34,8 +34,8 @@ And what if you fire or emit an arg-limited event?
 
     $ event.on foo echo
 
-    $ event.emit foo@7 bar baz
+    $ event.emit foo^7 bar baz
     bar baz
 
-    $ event.fire foo@99 bar baz
+    $ event.fire foo^99 bar baz
     bar baz

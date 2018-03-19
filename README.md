@@ -102,11 +102,11 @@ This means, though, that your callbacks may behave in unexpected ways, if they a
     chain that this that
 ````
 
-There's an extra, unexpected "that", because both of the `event2` callbacks receive it as an extra argument.  We can prevent this by specifying the maximum number of arguments we want our callbacks to receive, by adding an `@` and the number of arguments when subscribing to the event:
+There's an extra, unexpected "that", because both of the `event2` callbacks receive it as an extra argument.  We can prevent this by specifying the maximum number of arguments we want our callbacks to receive, by adding an `^` and the number of arguments when subscribing to the event:
 
 ````sh
-    $ event.on "event2"@0 event.on event1 echo "chain"
-    $ event.on "event2"@1 event.fire event1 this
+    $ event.on "event2"^0 event.on event1 echo "chain"
+    $ event.on "event2"^1 event.fire event1 this
     $ event.fire event2 that
     chain this that
 ````
@@ -116,27 +116,27 @@ There's an extra, unexpected "that", because both of the `event2` callbacks rece
 ````sh
 # Only one argument:
 
-    $ event.on "myevent"@1 echo
+    $ event.on "myevent"^1 echo
     $ event.emit myevent foo bar baz
     foo
 
 # Different count = different callbacks:
 
-    $ event.has "myevent"@1 echo && echo got it
+    $ event.has "myevent"^1 echo && echo got it
     got it
-    $ event.has "myevent"@2 echo || echo nope
+    $ event.has "myevent"^2 echo || echo nope
     nope
 
 # Add 2 argument version:
 
-    $ event.on "myevent@2" echo
+    $ event.on "myevent^2" echo
     $ event.emit myevent foo bar baz
     foo
     foo bar
 
 # Remove the 2-arg version, add unlimited version:
 
-    $ event.off "myevent"@2 echo
+    $ event.off "myevent"^2 echo
     $ event.on "myevent" echo
 
     $ event.emit myevent foo bar baz
@@ -147,7 +147,7 @@ There's an extra, unexpected "that", because both of the `event2` callbacks rece
 
     $ event.has "myevent" echo && echo got it
     got it
-    $ event.has "myevent"@2 echo || echo nope
+    $ event.has "myevent"^2 echo || echo nope
     nope
 
 ````
