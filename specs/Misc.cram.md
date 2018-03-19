@@ -17,7 +17,7 @@ Also, what happens if you don't pass anything to event.on, .has, or .off?
     [64]
 
     $ ( event.has )
-    : missing callback
+    Invalid event name ''
     [64]
 
 Or don't give an event to fire or emit?
@@ -29,3 +29,13 @@ Or don't give an event to fire or emit?
     $ ( event.fire )
     Invalid event name ''
     [64]
+
+And what if you fire or emit an arg-limited event?
+
+    $ event.on foo echo
+
+    $ event.emit foo@7 bar baz
+    bar baz
+
+    $ event.fire foo@99 bar baz
+    bar baz
