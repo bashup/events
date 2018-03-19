@@ -1,0 +1,1 @@
+BINS=bashup.events

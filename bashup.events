@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+event.argn() { $1 "${@:3:$2}";}
+event.valid(){ [[ "${1-}" =~ ^[_[:alnum:]]+$ ]];}
+event.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
+event.__set(){ printf -v "$e" %s "$@";}
+event.has() {
+	[[ "${1-}" =~ ^[_[:alnum:]]+(@[0-9]+)?$ ]] || { echo "Invalid characters in event name '${1-}'" >&2; exit 64;}
+	event.quote "${@:2}"; [[ ! "${BASH_REMATCH[1]}" ]] || printf -v REPLY "event.argn %q ${1##*@}" "$REPLY"
+	REPLY+=$'\n'; e="bashup_events_${1%@*}"; ${!e+:} event.__set
+	[[ $'\n'"${!e}" == *$'\n'"$REPLY"* ]]
+}
+event.on() { local e; event.has "$@" || event.__set "${!e}" "$REPLY";}
+event.off(){ local e v; event.has "$@" || return; v="${!e}"; v=${v#"$REPLY"}; event.__set "${v//$'\n'"$REPLY"/$'\n'}";}
+event.emit(){ local e; event.has "${1%@*}" "${@:2}"||:; eval "${!e//$'\n'/ $REPLY}";}
+event.fire(){ while local e r; event.has "${1%@*}" "${@:2}"||:; [[ "${!e}" ]]; do r=${!e//$'\n'/ $REPLY}; unset $e; eval "$r"; done;}
+
