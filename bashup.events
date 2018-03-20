@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-event.valid(){ [[ ${1-} =~ ^[_[:alnum:]]+$ ]];}
-event.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
-event.__cb() {
-	(($1!=1))||{ echo "${2-}: missing callback">&2;exit 64;}
-	[[ ${2-} =~ ^[_[:alnum:]]+(\^[0-9]+)?$ ]]||{ echo "Invalid event name '${2-}'">&2;exit 64;}
-	e="bashup_evt_${2%^*}"; (($1))||return; event.quote "${@:3}";REPLY+=' "${@:2'
-	[[ $2 != *^* ]]||REPLY+=":${2##*^}"; REPLY+=$'}"\n'; [[ $'\n'"${!e-}" == *$'\n'"$REPLY"* ]]
+event() {
+	case $1 in valid|quote) :;; *)
+		local e=${2-} n m=; n=$e; e=${e%^*}
+		__ev.valid "$e"||m="Invalid event name '$e'"
+		case $1$m in on|off|has)
+			(($#>2))||m="${2-}: missing callback"; n=${n#$e}; n=${n#^}
+			__ev.quote "${@:3}";REPLY+=' "${@:2'"${n:+:$n}"$'}"\n'
+		esac
+		e=bashup_event_$e; ! [[ $m ]]||{ echo $m>&2;exit 64;}
+	esac ; __ev.$1 "${@:2}"
 }
-event.has(){ local e; event.__cb $# "$@";}
-event.on() { local e; event.__cb $# "$@"||eval $e='"${!e-}$REPLY"';}
-event.off(){ local e v; event.__cb $# "$@"||return; v="${!e}"; v=${v#"$REPLY"}; eval $e='"${v//$'\n'"$REPLY"/$'\n'}"';}
-event.emit(){ local e; event.__cb 0 "$@"||:; eval "${!e-}";}
-event.fire(){ while local e r; event.__cb 0 "$@"||:; [[ ${!e-} ]]; do r=${!e}; unset $e; eval "$r"; done;}
+__ev.valid(){ [[ ${1-} =~ ^[_[:alnum:]]+$ ]];}
+__ev.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
+__ev.has() { [[ $'\n'"${!e-}" == *$'\n'"$REPLY"* ]];}
+__ev.on() { __ev.has||eval $e='"${!e-}$REPLY"';}
+__ev.off() { __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval $e=$'"${n//\n"$REPLY"/\n}"';}
+__ev.emit(){ eval "${!e-}";}
+__ev.fire(){ set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
 
