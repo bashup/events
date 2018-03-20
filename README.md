@@ -167,17 +167,6 @@ There's an extra, unexpected "that", because both of the `event2` callbacks rece
     nope
 ````
 
-#### event.argn
-
-`event.argn` *count cmd args...* invokes *cmd* with the first *count* arguments of *args*.  (This function is used internally to wrap callbacks with limited argument counts.)
-
-````sh
-    $ event.argn 2 echo a b c
-    a b
-    $ event.argn 1 echo foo a
-    foo
-````
-
 #### event.quote
 
 `event.quote` *args* sets `$REPLY` to a space-separated list of the given arguments in shell-quoted form (using `printf %q`).  The resulting string is safe to `eval`, or pass to `event.argn` as a command, in the sense that the arguments are guaranteed to expand to the same values (and number of values) as were originally given.
