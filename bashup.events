@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 event() {
-	case $1 in valid|quote) :;; *)
-		local e=${2-} n m=; n=$e; e=${e%^*}
-		__ev.valid "$e"||m="Invalid event name '$e'"
+	case $1 in valid|quote);;
+	*) local e=${2-} n m=; e=${e%/*}; __ev.valid "$e"||m="Invalid event name '$e'"
 		case $1$m in on|off|has)
-			(($#>2))||m="${2-}: missing callback"; n=${n#$e}; n=${n#^}
-			__ev.quote "${@:3}";REPLY+=' "${@:2'"${n:+:$n}"$'}"\n'
+			(($#>2))||m="${2-}: missing callback"; n=${2#$e}; n=${n#/}
+			case $n in _)n='$#';;*)n=$((n));; esac
+			__ev.quote "${@:3}";REPLY+=' "${@:2:$(('"$n"$'))}"\n'
 		esac
 		e=bashup_event_$e; ! [[ $m ]]||{ echo $m>&2;exit 64;}
 	esac ; __ev.$1 "${@:2}"

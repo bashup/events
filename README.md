@@ -78,65 +78,60 @@ Using these functions, you can implement both repeatable and one-shot events, e.
 
 #### Passing Arguments
 
-When emitting or firing an event, you can pass additional arguments that will be added to the end of the arguments supplied to the given callbacks:
+When emitting or firing an event, you can pass additional arguments that will be added to the end of the arguments supplied to the given callbacks.  The callbacks, however, will only receive these arguments if they were registered to do so, by adding a `/` at the end of the event name, followed by the maximum number of arguments the callback is prepared to receive:
 
 ````sh
-# Callbacks receive extra arguments sent by event emit
+# Callbacks can receive extra arguments sent by emit/fire:
 
-    $ event on event2 echo "Args:"
-    $ event emit event2 foo bar
+    $ event on "event2"/2 echo "Args:"  # accept up to 2 arguments
+    $ event fire event2 foo bar baz
     Args: foo bar
+
 ````
 
-This means, though, that your callbacks may behave in unexpected ways, if they aren't written with extra or a variable number arguments in mind.  For example, this code doesn't behave the way you'd expect:
+The reason an argument count is required, is because one purpose of  an event system is to be *extensible*.  If an event adds new arguments over time, old callbacks may break if they weren't written in such a way as to ignore the new arguments.  Requiring an explicit request for arguments avoids this problem.
+
+If the nature of the event is that it emits a *variable* number of arguments, however, you can register your callback with `/_`, which means "receive *all* the arguments, no matter how many".  You should only use it in places where you can definitely handle any number of arguments, or else you may run into unexpected behavior.
 
 ````sh
-# Chained argument adding
+# Why variable arguments lists aren't the default:
+    $ event on "cleanup"/_ echo "rm -rf"
+    $ event emit "cleanup" foo
+    rm -rf foo
 
-    $ event on event2 event on event1 echo "chain to"
-    $ event on event2 event fire event1 this
+# New release...  "cleanup" event adds a new argument
+    $ event emit "cleanup" foo /
+    rm -rf foo /
 
-    $ event fire event2 that
-    Args: that
-    chain to that this that
 ````
 
-There's an extra, unexpected "that", because both of the `event2` callbacks receive it as an extra argument.  We can prevent this by specifying the maximum number of arguments we want our callbacks to receive, by adding an `^` and the number of arguments when subscribing to the event:
-
-````sh
-    $ event on "event2"^0 event on event1 echo "chain to"
-    $ event on "event2"^1 event fire event1 this
-    $ event fire event2 that
-    chain to this that
-````
-
-`event on`, `event off`, and `event has` all accept argument counts.  Callbacks with different argument counts are considered to be different callbacks:
+`event on`, `event off`, and `event has` all accept argument counts when adding, removing, or checking for callbacks.  Callbacks with different argument counts are considered to be *different* callbacks:
 
 ````sh
 # Only one argument:
 
-    $ event on "myevent"^1 echo
+    $ event on "myevent"/1 echo
     $ event emit myevent foo bar baz
     foo
 
 # Different count = different callbacks:
 
-    $ event has "myevent"^1 echo && echo got it
+    $ event has "myevent"/1 echo && echo got it
     got it
-    $ event has "myevent"^2 echo || echo nope
+    $ event has "myevent"/2 echo || echo nope
     nope
 
 # Add 2 argument version:
 
-    $ event on "myevent^2" echo
+    $ event on "myevent/2" echo
     $ event emit myevent foo bar baz
     foo
     foo bar
 
 # Remove the 2-arg version, add unlimited version:
 
-    $ event off "myevent"^2 echo
-    $ event on "myevent" echo
+    $ event off "myevent"/2 echo
+    $ event on "myevent"/_ echo
 
     $ event emit myevent foo bar baz
     foo
@@ -144,14 +139,28 @@ There's an extra, unexpected "that", because both of the `event2` callbacks rece
 
 # Unlimited version is distinct, too:
 
-    $ event has "myevent" echo && echo got it
+    $ event has "myevent"/_ echo && echo got it
     got it
-    $ event has "myevent"^2 echo || echo nope
+    $ event has "myevent"/2 echo || echo nope
     nope
 
+# As is the zero-arg version:
+
+    $ event has "myevent" echo || echo nope
+    nope
+
+# But the zero-arg version can be implicit or explicit:
+
+    $ event on  "myevent" echo
+    $ event has "myevent" echo && echo got it
+    got it
+    $ event has "myevent"/0 echo && echo got it
+    got it
+
+    $ event off "myevent"/0 echo
+    $ event has "myevent" echo || echo nope
+    nope
 ````
-
-
 
 ### Utilities
 
