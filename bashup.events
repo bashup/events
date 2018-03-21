@@ -18,4 +18,5 @@ __ev.on() { __ev.has||eval $e='"${!e-}$REPLY"';}
 __ev.off() { __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval $e=$'"${n//\n"$REPLY"/\n}"';}
 __ev.emit(){ eval "${!e-}";}
 __ev.fire(){ set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
-
+__ev.all(){ e=${!e-};eval "${e//$'\n'/||return; }";}
+__ev.any(){ e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}

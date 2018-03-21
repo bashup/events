@@ -7,11 +7,14 @@ This is a simple event listener/callback API for bash programs.  Events can be o
 <!-- toc -->
 
 - [Installation, Requirements And Use](#installation-requirements-and-use)
-- [Events API](#events-api)
-  * [Passing Arguments](#passing-arguments)
-- [Utilities](#utilities)
-  * [event valid](#eventvalid)
-  * [event quote](#eventquote)
+- [Basic Operations](#basic-operations)
+- [Passing Arguments](#passing-arguments)
+- [Conditional Operations](#conditional-operations)
+  * [event all](#event-all)
+  * [event any](#event-any)
+- [Miscellaneous Operations](#miscellaneous-operations)
+  * [event valid](#event-valid)
+  * [event quote](#event-quote)
 - [License](#license)
 
 <!-- tocstop -->
@@ -24,24 +27,26 @@ Copy and paste the [code](bashup.events) into your script, or place it on `PATH`
     $ source bashup.events
 ````
 
-### Events API
+### Basic Operations
+
+Sourcing `bashup.events` exposes one public function, `event`, that provides a variety of subcommands.  All of the primary subcommands take an event name as their first argument.
 
 Events names are any sequence of alphanumeric or `_` characters.  Invoking an event-taking subcommand with an invalid event name will return an exit code of 64 (EX_USAGE), and a message on stderr.
 
-The main API commands are:
+The primary subcommands are:
 
 * `event on` *event cmd [args...]* -- subscribes *cmd args...* as a callback to *event*, if it's not already added
 * `event off` *event cmd [args...]* -- unsubscribes the *cmd args...* callback from *event*
 * `event has` *event [cmd [args...]]* -- returns truth if *event* has a registered callback of *cmd args...*, or if no *cmd...* is given, returns truth if *any* callbacks have been registered for *event*.
 * `event emit` *event data...* -- emit a "repeatable" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will not take effect until a subsequent `send` or `drain` of the event, and existing callbacks remain subscribed.
-* `event fire` *event data...* -- fire a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arugments to each  callback.  All callbacks are removed from the event, and new callbacks added during the drain will be invoked as soon as all previously-added callbacks have been invoked.
+* `event fire` *event data...* -- fire a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arugments to each  callback.  All callbacks are removed from the event, and new callbacks added during the firing will be invoked as soon as all previously-added callbacks have been invoked.  (Similar to Javascript promise resolution.)
 
 
 
 Using these functions, you can implement both repeatable and one-shot events, e.g.:
 
 ````sh
-# Subscribe to events using event on
+# Subscribe to events using `event on`
 
     $ event on event1 echo "got event1"
     $ event on event1 echo "is this cool or what?"
@@ -84,7 +89,7 @@ Using these functions, you can implement both repeatable and one-shot events, e.
 
 ````
 
-#### Passing Arguments
+### Passing Arguments
 
 When emitting or firing an event, you can pass additional arguments that will be added to the end of the arguments supplied to the given callbacks.  The callbacks, however, will only receive these arguments if they were registered to do so, by adding a `/` at the end of the event name, followed by the maximum number of arguments the callback is prepared to receive:
 
@@ -170,7 +175,61 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
     nope
 ````
 
-### Utilities
+### Conditional Operations
+
+#### event all
+
+`event all` *event data*... works like `event emit`, except that execution stops after the first callback that returns false (i.e., a non-zero exit code), and that exit code is returned.  Truth is returned if all events return truth.
+
+````sh
+# Use an event to validate a password
+
+    $ validate() { echo "validating: $1"; [[ $3 =~ $2 ]]; }
+
+    $ event on "password_check"/1 validate "has a number" '[0-9]+'
+    $ event on "password_check"/1 validate "is 8+ chars" ........
+    $ event on "password_check"/1 validate "has uppercase" '[A-Z]'
+    $ event on "password_check"/1 validate "has lowercase" '[a-z]'
+
+    $ event all "password_check" 'foo27' || echo "fail!"
+    validating: has a number
+    validating: is 8+ chars
+    fail!
+
+    $ event all "password_check" 'Blue42Schmoo' && echo "pass!"
+    validating: has a number
+    validating: is 8+ chars
+    validating: has uppercase
+    validating: has lowercase
+    pass!
+
+````
+
+#### event any
+
+`event any` *event data...* also works like `event emit`, except that execution stops on the first callback to return truth (i.e. a zero exit code).  An exit code of 1 is returned if all events return non-zero exist codes.
+
+````sh
+    $ match() { echo "checking for $1"; REPLY=$2; [[ $1 == $3 ]]; }
+
+    $ event on "lookup"/1 match a "got one!"
+    $ event on "lookup"/1 match b "number two"
+    $ event on "lookup"/1 match c "third time's the charm"
+
+    $ event any "lookup" b && echo "match: $REPLY"
+    checking for a
+    checking for b
+    match: number two
+
+    $ event any "lookup" q || echo "fail!"
+    checking for a
+    checking for b
+    checking for c
+    fail!
+
+````
+
+### Miscellaneous Operations
 
 #### event valid
 
