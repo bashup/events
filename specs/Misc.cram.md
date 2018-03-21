@@ -20,6 +20,13 @@ Also, what happens if you don't pass anything to event on, .has, or .off?
     Invalid event name ''
     [64]
 
+    $ ( event has x ) || echo [$?]
+    [1]
+    $ event on x echo y
+
+    $ ( event has x ); echo [$?]
+    [0]
+
 Or don't give an event to fire or emit?
 
     $ ( event emit ) || echo [$?]

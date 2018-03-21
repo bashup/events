@@ -5,14 +5,14 @@ event() {
 		case $1$m in on|off|has)
 			(($#>2))||m="${2-}: missing callback"; n=${2#$e}; n=${n#/}
 			case $n in _)n='$#';;*)n=$((n));; esac
-			__ev.quote "${@:3}";REPLY+=' "${@:2:$(('"$n"$'))}"\n'
+			case $1${m:+_} in has_)m=;REPLY=;;*)__ev.quote "${@:3}";REPLY+=' "${@:2:$(('"$n"$'))}"\n';; esac
 		esac
 		e=bashup_event_$e; ! [[ $m ]]||{ echo $m>&2;exit 64;}
 	esac ; __ev.$1 "${@:2}"
 }
 __ev.valid(){ [[ ${1-} =~ ^[_[:alnum:]]+$ ]];}
 __ev.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
-__ev.has() { [[ $'\n'"${!e-}" == *$'\n'"$REPLY"* ]];}
+__ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* ]];}
 __ev.on() { __ev.has||eval $e='"${!e-}$REPLY"';}
 __ev.off() { __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval $e=$'"${n//\n"$REPLY"/\n}"';}
 __ev.emit(){ eval "${!e-}";}

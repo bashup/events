@@ -32,7 +32,7 @@ The main API commands are:
 
 * `event on` *event cmd [args...]* -- subscribes *cmd args...* as a callback to *event*, if it's not already added
 * `event off` *event cmd [args...]* -- unsubscribes the *cmd args...* callback from *event*
-* `event has` *event cmd [args...]* -- returns truth if *event* has a registered callback of *cmd args...*
+* `event has` *event [cmd [args...]]* -- returns truth if *event* has a registered callback of *cmd args...*, or if no *cmd...* is given, returns truth if *any* callbacks have been registered for *event*.
 * `event emit` *event data...* -- emit a "repeatable" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will not take effect until a subsequent `send` or `drain` of the event, and existing callbacks remain subscribed.
 * `event fire` *event data...* -- fire a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arugments to each  callback.  All callbacks are removed from the event, and new callbacks added during the drain will be invoked as soon as all previously-added callbacks have been invoked.
 
@@ -64,6 +64,14 @@ Using these functions, you can implement both repeatable and one-shot events, e.
     cool!
     $ event has event1 echo "got event1" || echo "nope!"
     nope!
+
+# `event has` with no callback tests for any callbacks at all
+
+    $ event has event1 && echo "yes, there are some callbacks"
+    yes, there are some callbacks
+
+    $ event has something_else || echo "but not for this other event"
+    but not for this other event
 
 # event fire removes callbacks and handles nesting:
 
