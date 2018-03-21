@@ -7,8 +7,9 @@ event() {
 			case $n in _)n='$#';;*)n=$((n));; esac
 			case $1${m:+_} in has_)m=;REPLY=;;*)__ev.quote "${@:3}";REPLY+=' "${@:2:$(('"$n"$'))}"\n';; esac
 		esac
-		e=bashup_event_$e; ! [[ $m ]]||{ echo $m>&2;exit 64;}
-	esac ; __ev.$1 "${@:2}"
+		e=bashup_event_$e; ! [[ $m ]]||{ echo $m>&2;return 64;}
+	esac
+	__ev."$@"
 }
 __ev.valid(){ [[ ${1-} =~ ^[_[:alnum:]]+$ ]];}
 __ev.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}

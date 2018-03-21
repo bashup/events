@@ -26,7 +26,7 @@ Copy and paste the [code](bashup.events) into your script, or place it on `PATH`
 
 ### Events API
 
-Events can be named using any sequence of alphanumeric or `_` characters.  Invoking any API command (other than `event valid`) with an invalid event name will abort program execution with an exit code of 64 (EX_USAGE), and a message on stderr.
+Events names are any sequence of alphanumeric or `_` characters.  Invoking an event-taking subcommand with an invalid event name will return an exit code of 64 (EX_USAGE), and a message on stderr.
 
 The main API commands are:
 
