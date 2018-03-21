@@ -48,44 +48,46 @@ Using these functions, you can implement both repeatable and one-shot events, e.
 ````sh
 # Subscribe to events using `event on`
 
-    $ event on event1 echo "got event1"
-    $ event on event1 echo "is this cool or what?"
+    $ event on "event1" echo "got event1"
+    $ event on "event1" echo "is this cool or what?"
 
-# Fire events with event emit
+# Invoke callbacks using `event emit`
 
-    $ event emit event1
+    $ event emit "event1"
     got event1
     is this cool or what?
 
-# Unsubscribe using event off:
+# Unsubscribe using `event off`:
 
-    $ event off event1 echo "got event1"
-    $ event emit event1
+    $ event off "event1" echo "got event1"
+    $ event emit "event1"
     is this cool or what?
 
-# Test susbscription with event has
+# Test susbscription with `event has`
 
-    $ event has event1 echo "is this cool or what?" && echo "cool!"
+    $ event has "event1" echo "is this cool or what?" && echo "cool!"
     cool!
-    $ event has event1 echo "got event1" || echo "nope!"
+    $ event has "event1" echo "got event1" || echo "nope!"
     nope!
 
 # `event has` with no callback tests for any callbacks at all
 
-    $ event has event1 && echo "yes, there are some callbacks"
+    $ event has "event1" && echo "yes, there are some callbacks"
     yes, there are some callbacks
 
-    $ event has something_else || echo "but not for this other event"
+    $ event has "something_else" || echo "but not for this other event"
     but not for this other event
 
-# event fire removes callbacks and handles nesting:
+# `event fire` removes callbacks and handles nesting:
 
-    $ event on event1 event on event1 echo "nested!"
-    $ event fire event1
+    $ mycallback() { event on event1 echo "nested!"; }
+    $ event on "event1" mycallback
+
+    $ event fire "event1"
     is this cool or what?
     nested!
 
-    $ event emit event1   # all callbacks gone now
+    $ event emit "event1"   # all callbacks gone now
 
 ````
 
@@ -97,7 +99,7 @@ When emitting or firing an event, you can pass additional arguments that will be
 # Callbacks can receive extra arguments sent by emit/fire:
 
     $ event on "event2"/2 echo "Args:"  # accept up to 2 arguments
-    $ event fire event2 foo bar baz
+    $ event fire "event2" foo bar baz
     Args: foo bar
 
 ````
@@ -108,12 +110,12 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 ````sh
 # Why variable arguments lists aren't the default:
+
     $ event on "cleanup"/_ echo "rm -rf"
     $ event emit "cleanup" foo
     rm -rf foo
 
-# New release...  "cleanup" event adds a new argument
-    $ event emit "cleanup" foo /
+    $ event emit "cleanup" foo /   # New release...  "cleanup" event added a new argument!
     rm -rf foo /
 
 ````
