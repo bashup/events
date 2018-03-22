@@ -31,7 +31,7 @@ Copy and paste the [code](bashup.events) into your script, or place it on `PATH`
 
 Sourcing `bashup.events` exposes one public function, `event`, that provides a variety of subcommands.  All of the primary subcommands take an event name as their first argument.
 
-Events names are any sequence of alphanumeric or `_` characters.  Invoking an event-taking subcommand with an invalid event name will return an exit code of 64 (EX_USAGE), and a message on stderr.
+Event names are any sequence of alphanumeric or `_` characters.  Invoking an event-taking subcommand with an invalid event name will return an exit code of 64 (EX_USAGE), and a message on stderr.
 
 The primary subcommands are:
 
@@ -39,7 +39,7 @@ The primary subcommands are:
 * `event off` *event cmd [args...]* -- unsubscribes the *cmd args...* callback from *event*
 * `event has` *event [cmd [args...]]* -- returns truth if *event* has a registered callback of *cmd args...*, or if no *cmd...* is given, returns truth if *any* callbacks have been registered for *event*.
 * `event emit` *event data...* -- emit a "repeatable" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will not take effect until a subsequent `send` or `drain` of the event, and existing callbacks remain subscribed.
-* `event fire` *event data...* -- fire a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arugments to each  callback.  All callbacks are removed from the event, and new callbacks added during the firing will be invoked as soon as all previously-added callbacks have been invoked.  (Similar to Javascript promise resolution.)
+* `event fire` *event data...* -- fire a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each  callback.  All callbacks are removed from the event, and new callbacks added during the firing will be invoked as soon as all previously-added callbacks have been invoked.  (Similar to Javascript promise resolution.)
 
 
 
@@ -98,8 +98,8 @@ When emitting or firing an event, you can pass additional arguments that will be
 ````sh
 # Callbacks can receive extra arguments sent by emit/fire:
 
-    $ event on "event2"/2 echo "Args:"  # accept up to 2 arguments
-    $ event fire "event2" foo bar baz
+    $ event on   "event2"/2 echo "Args:"  # accept up to 2 arguments
+    $ event fire "event2"   foo bar baz
     Args: foo bar
 
 ````
@@ -111,11 +111,11 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 ````sh
 # Why variable arguments lists aren't the default:
 
-    $ event on "cleanup"/_ echo "rm -rf"
-    $ event emit "cleanup" foo
+    $ event on   "cleanup"/_ echo "rm -rf"
+    $ event emit "cleanup"   foo
     rm -rf foo
 
-    $ event emit "cleanup" foo /   # New release...  "cleanup" event added a new argument!
+    $ event emit "cleanup"   foo /   # New release...  "cleanup" event added a new argument!
     rm -rf foo /
 
 ````
@@ -125,8 +125,8 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 ````sh
 # Only one argument:
 
-    $ event on "myevent"/1 echo
-    $ event emit myevent foo bar baz
+    $ event on   "myevent"/1 echo
+    $ event emit "myevent"   foo bar baz
     foo
 
 # Different count = different callbacks:
@@ -138,15 +138,15 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 # Add 2 argument version:
 
-    $ event on "myevent/2" echo
-    $ event emit myevent foo bar baz
+    $ event on   "myevent/2" echo
+    $ event emit "myevent"   foo bar baz
     foo
     foo bar
 
 # Remove the 2-arg version, add unlimited version:
 
     $ event off "myevent"/2 echo
-    $ event on "myevent"/_ echo
+    $ event on  "myevent"/_ echo
 
     $ event emit myevent foo bar baz
     foo
@@ -173,7 +173,7 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
     got it
 
     $ event off "myevent"/0 echo
-    $ event has "myevent" echo || echo nope
+    $ event has "myevent"   echo || echo nope
     nope
 ````
 
@@ -238,9 +238,9 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 `event valid` *string* returns truth if *string* is safe to use as an event name (without an argument count).
 
 ````sh
-    $ event valid foo && echo yep
+    $ event valid "foo"     && echo yep
     yep
-    $ event valid foo.bar || echo nope
+    $ event valid "foo.bar" || echo nope
     nope
 ````
 
