@@ -14,9 +14,11 @@ event() {
 __ev.valid(){ [[ ${1-} =~ ^[_[:alnum:]]+$ ]];}
 __ev.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
 __ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* ]];}
-__ev.on() { __ev.has||eval $e='"${!e-}$REPLY"';}
+__ev.on(){ __ev.has && return; eval $e='"${!e-}$REPLY"' 2>/dev/null||eval "set -- '' ${!e-}; $REPLY";}
 __ev.off() { __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval $e=$'"${n//\n"$REPLY"/\n}"';}
 __ev.emit(){ eval "${!e-}";}
 __ev.fire(){ set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
 __ev.all(){ e=${!e-};eval "${e//$'\n'/||return; }";}
 __ev.any(){ e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
+__ev.resolve(){ __ev.fire "$@";__ev.quote "${@:2}";readonly $e="$REPLY";}
+__ev.resolved(){ ! eval $e+=;} 2>/dev/null

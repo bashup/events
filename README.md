@@ -1,6 +1,6 @@
 # A Tiny Event System for Bash
 
-This is a simple event listener/callback API for bash programs.  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event.  Bash 4 is **not** required: this code should work just fine with OS X's old bash 3.2.  No external programs are used, so it's fast and portable.
+`bashup.events` is a practical event listener/callback API for bash programs.  It's small (<1.2k), fast (>10k events/second), and highly portable (no bash4-isms or external programs used) .  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event.  (You can even have "promises", of a sort!)
 
 **Contents**
 
@@ -9,6 +9,8 @@ This is a simple event listener/callback API for bash programs.  Events can be o
 - [Installation, Requirements And Use](#installation-requirements-and-use)
 - [Basic Operations](#basic-operations)
 - [Passing Arguments](#passing-arguments)
+- [Promise-Like Events](#promise-like-events)
+  * [event resolve / event resolved](#event-resolve--event-resolved)
 - [Conditional Operations](#conditional-operations)
   * [event all](#event-all)
   * [event any](#event-any)
@@ -175,6 +177,38 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
     $ event off "myevent"/0 echo
     $ event has "myevent"   echo || echo nope
     nope
+````
+
+### Promise-Like Events
+
+#### event resolve / event resolved
+
+If you have a truly one-time event that subscribers could "miss" by subscribing too late, you can use a `event resolve` to "permanently fire" an event with a specific set of arguments.  Once an event has been resolved, all future `event on` calls for the event will invoke the callback immediately instead, and all future `event off` calls will do nothing.  `event resolved` returns truth if `event resolve` has been called.  There is no way to "unresolve" an event.
+
+````sh
+# Subscribers before the resolve will be fired at resolve:
+
+    $ event resolved "promised" || echo "not yet"
+    not yet
+
+    $ event on "promised" event on "promised/1" echo "Nested:"
+    $ event on "promised/1" echo "Plain:"
+
+    $ event resolve "promised" value
+    Plain: value
+    Nested: value
+
+    $ event resolved "promised" && echo "yep"
+    yep
+
+# Subscribers after the resolve are fired immediately:
+
+    $ event on "promised" event on "promised/1" echo "Nested:"
+    Nested: value
+
+    $ event on "promised/1" echo "Plain:"
+    Plain: value
+
 ````
 
 ### Conditional Operations
