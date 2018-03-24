@@ -1,6 +1,6 @@
 # A Tiny Event System for Bash
 
-`bashup.events` is a practical event listener/callback API for bash programs.  It's small (<1.2k), fast (>10k events/second), and highly portable (no bash4-isms or external programs used) .  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event.  (You can even have "promises", of a sort!)
+`bashup.events` is a practical event listener/callback API for bash programs.  It's small (~1.3k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used) .  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event.  (You can even have "promises", of a sort!)
 
 **Contents**
 
@@ -209,6 +209,24 @@ If you have a truly one-time event that subscribers could "miss" by subscribing 
     $ event on "promised/1" echo "Plain:"
     Plain: value
 
+# And a resolved event never "has" any subscribers:
+
+    $ event has "promised" || echo nope
+    nope
+
+# Duplicate emit/fire/resolve produces code 70 (EX_SOFTWARE):
+
+    $ event resolve "promised" other
+    event "promised" already resolved
+    [70]
+
+    $ event fire "promised" other
+    event "promised" already resolved
+    [70]
+
+    $ event emit "promised" other
+    event "promised" already resolved
+    [70]
 ````
 
 ### Conditional Operations
