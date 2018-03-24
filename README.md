@@ -14,7 +14,8 @@
 - [Conditional Operations](#conditional-operations)
   * [event all](#event-all)
   * [event any](#event-any)
-- [Miscellaneous Operations](#miscellaneous-operations)
+- [Other Operations](#other-operations)
+  * [event once](#event-once)
   * [event valid](#event-valid)
   * [event quote](#event-quote)
 - [License](#license)
@@ -283,7 +284,18 @@ If you have a truly one-time event that subscribers could "miss" by subscribing 
 
 ````
 
-### Miscellaneous Operations
+### Other Operations
+
+#### event once
+
+`event once` *event cmd [args...]* is like `event on`, except that the callback is removed before it's invoked, ensuring it will be called at most once, even if *event* is emitted multiple times:
+
+````sh
+    $ event once "something"/_ echo
+    $ event emit "something" this that
+    this that
+    $ event emit "something" more stuff
+````
 
 #### event valid
 

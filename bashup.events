@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 event() {
-	case $1 in valid|quote|err);;
+	case $1 in valid|quote|err|once);;
 	*) local e=${2-} f n m=; e=${e%/*}; __ev.valid "$e"||m="Invalid event name '$e'"
 		case $1$m in on|off|has)
 			(($#>2))||m="${2-}: missing callback"; n=${2#$e} n=${n#/}
@@ -26,3 +26,4 @@ __ev.resolve(){
 	readonly $f="eval __ev.err 'event \"'$1'\" already resolved' 70;return" $e="set -- $REPLY"
 }
 __ev.resolved(){ [[ ${!f-} ]];}
+__ev.once(){ event on "${1%/*}" event off "$@" && event on "$@";}
