@@ -183,7 +183,7 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 #### event resolve / event resolved
 
-If you have a truly one-time event that subscribers could "miss" by subscribing too late, you can use a `event resolve` to "permanently fire" an event with a specific set of arguments.  Once an event has been resolved, all future `event on` calls for the event will invoke the callback immediately instead, and all future `event off` calls will do nothing.  `event resolved` returns truth if `event resolve` has been called.  There is no way to "unresolve" an event.
+If you have a truly one-time event that subscribers could "miss" by subscribing too late, you can use `event resolve` to "permanently fire" an event with a specific set of arguments.  Once an event has been resolved, all future `event on` calls for the event will invoke the callback immediately instead, and all future `event off` calls will do nothing.  `event resolved` returns truth if `event resolve` has been called.  There is no way to "unresolve" a resolved event within the current shell.
 
 ````sh
 # Subscribers before the resolve will be fired at resolve:
@@ -310,8 +310,6 @@ If you have a truly one-time event that subscribers could "miss" by subscribing 
     $ event quote && echo "'$REPLY'"
     ''
 ````
-
-
 
 ### License
 
