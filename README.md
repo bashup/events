@@ -13,9 +13,10 @@
   * [event off](#event-off)
   * [event has](#event-has)
   * [event fire](#event-fire)
-- [Passing Arguments](#passing-arguments)
+- [Passing Arguments To Callbacks](#passing-arguments-to-callbacks)
 - [Promise-Like Events](#promise-like-events)
-  * [event resolve / event resolved](#event-resolve--event-resolved)
+  * [event resolve](#event-resolve)
+  * [event resolved](#event-resolved)
 - [Conditional Operations](#conditional-operations)
   * [event all](#event-all)
   * [event any](#event-any)
@@ -52,7 +53,7 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
 
 #### event emit
 
-`event emit` *event data...* -- emit a "repeatable" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will not take effect until a subsequent `send` or `drain` of the event, and existing callbacks remain subscribed.
+`event emit` *event data...* invokes all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will **not** take effect until a subsequent `send` or `drain` of the event, and existing callbacks remain subscribed.
 
 ````sh
     $ event emit "event1"
@@ -72,7 +73,7 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
 
 #### event has
 
-* `event has` *event* -- returns truth if *event* has any registered callbacks.
+* `event has` *event* returns truth if *event* has any registered callbacks.
 * `event has` *event cmd [args...]* returns truth if *cmd args...* has been registered as a callback for *event*.
 
 ````sh
@@ -84,7 +85,7 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
     $ event has "something_else" || echo "but not for this other event"
     but not for this other event
 
-# Test for specific callback susbscription:`
+# Test for specific callback susbscription:
 
     $ event has "event1" echo "is this cool or what?" && echo "cool!"
     cool!
@@ -95,7 +96,7 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
 
 #### event fire
 
-`event fire` *event data...* fires a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  All callbacks are removed from the event, and new callbacks added during the firing will be invoked as soon as all previously-added callbacks have been invoked.  (Similar to Javascript promise resolution.)
+`event fire` *event data...* fires a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  All callbacks are removed from the event, and new callbacks added during the firing will be invoked as soon as all previously-added callbacks have been invoked.  (Similar to Javascript promise resolution, except that an event can be fired more than once.)
 
 ````sh
 # `event fire` removes callbacks and handles nesting:
@@ -111,7 +112,7 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
 
 ````
 
-### Passing Arguments
+### Passing Arguments To Callbacks
 
 When emitting or firing an event, you can pass additional arguments that will be added to the end of the arguments supplied to the given callbacks.  The callbacks, however, will only receive these arguments if they were registered to do so, by adding a `/` at the end of the event name, followed by the maximum number of arguments the callback is prepared to receive:
 
@@ -199,19 +200,14 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 ### Promise-Like Events
 
-#### event resolve / event resolved
+#### event resolve
 
-If you have a truly one-time event that subscribers could "miss" by subscribing too late, you can use `event resolve` to "permanently fire" an event with a specific set of arguments.
+If you have a truly one-time event, but subscribers could "miss it" by subscribing too late, you can use `event resolve` to "permanently fire" an event with a specific set of arguments.  Once this is done, all future `event on` calls for that event will invoke the callback *immediately* with the previously-given arguments.
 
-Once an event has been resolved, all future `event on` calls for the event will invoke the callback immediately instead, and all future `event off` calls will do nothing.
-
-`event resolved` returns truth if `event resolve` has been called for the specified event.  There is no way to "unresolve" a resolved event within the current shell.
+There is no way to "unresolve" a resolved event within the current shell.  Trying to `resolve`, `emit`, or `fire` an already-resolved event will result in an error message and a failure return.
 
 ````sh
-# Subscribers before the resolve will be fired at resolve:
-
-    $ event resolved "promised" || echo "not yet"
-    not yet
+# Subscribers before the resolve will be fired upon resolve:
 
     $ event on "promised" event on "promised/1" echo "Nested:"
     $ event on "promised/1" echo "Plain:"
@@ -219,9 +215,6 @@ Once an event has been resolved, all future `event on` calls for the event will 
     $ event resolve "promised" value
     Plain: value
     Nested: value
-
-    $ event resolved "promised" && echo "yep"
-    yep
 
 # Subscribers after the resolve are fired immediately:
 
@@ -249,6 +242,18 @@ Once an event has been resolved, all future `event on` calls for the event will 
     $ event emit "promised" other
     event "promised" already resolved
     [70]
+````
+
+#### event resolved
+
+`event resolved` *event* returns truth if `event resolve` *event* has been called.
+
+````sh
+    $ event resolved "promised" && echo "yep"
+    yep
+
+    $ event resolved "another_promise" || echo "not yet"
+    not yet
 ````
 
 ### Conditional Operations
