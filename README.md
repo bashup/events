@@ -1,14 +1,14 @@
 # Practical Event Listeners for Bash
 
-`bashup.events` is a practical event listener/callback API for creating extensible bash programs.  It's small (~1.3k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event name.  (You can even have "promises", of a sort!)
+`bashup.events` is a practical event listener/callback API for creating extensible bash programs.  It's small (~1.3k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event name.  (You can even have "[promises](#promise-like-events)", of a sort!)  Callbacks can be any command or function plus any number of arguments, and can even opt to receive [additional arguments supplied by the event](#passing-arguments-to-callbacks).
 
-Features include:
+Other features include:
 
 * Running a callback each time something happens ([`event on`](#event-on), [`event emit`](#event-emit))
 * Running a callback the *next* time something happens, but not after that ([`event once`](#event-once))
 * Alert subscribers of an event once, making them re-subscribe for future occurrences ([`event fire`](#event-fire) )
 * Alert subscribers of a one-time only event or calculation... not just current subscribers, but *future* ones as well ([`event resolve`](#event-resolve))
-* Allow subscribed callbacks to veto a proc ess (e.g. validation rules), using [`event all`](#event-all)
+* Allow subscribed callbacks to veto a process (e.g. validation rules), using [`event all`](#event-all)
 * Search for the first callback that can successfully handle something, using [`event any`](#event-any)
 
 
