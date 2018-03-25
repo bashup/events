@@ -214,7 +214,7 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 If you have a truly one-time event, but subscribers could "miss it" by subscribing too late, you can use `event resolve` to "permanently fire" an event with a specific set of arguments.  Once this is done, all future `event on` calls for that event will invoke the callback *immediately* with the previously-given arguments.
 
-There is no way to "unresolve" a resolved event within the current shell.  Trying to `resolve`, `emit`, or `fire` an already-resolved event will result in an error message and a failure return.
+There is no way to "unresolve" a resolved event within the current shell.  Trying to `resolve`, `emit`, `fire`, `any` or `all` an already-resolved event will result in an error message and a failure return of 70 (`EX_SOFTWARE`).
 
 ````sh
 # Subscribers before the resolve will be fired upon resolve:
@@ -239,19 +239,6 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
     $ event has "promised" || echo nope
     nope
 
-# Duplicate emit/fire/resolve produces code 70 (EX_SOFTWARE):
-
-    $ event resolve "promised" other
-    event "promised" already resolved
-    [70]
-
-    $ event fire "promised" other
-    event "promised" already resolved
-    [70]
-
-    $ event emit "promised" other
-    event "promised" already resolved
-    [70]
 ````
 
 #### event resolved
@@ -358,6 +345,18 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
     $ event quote && echo "'$REPLY'"
     ''
 ````
+
+#### event error
+
+`event error` *message [exitlevel]* prints *message* to stderr and returns *exitlevel*, or 64 (`EX_USAGE`) if no *exitlevel* is given.  (You will still need to `return` or `exit` for this to have any further effect, unless `set -e` is in effect.)
+
+````sh
+    $ event error "This is an error" 127 >/dev/null
+    This is an error
+    [127]
+````
+
+
 
 ### License
 

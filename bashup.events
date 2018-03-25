@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 event() {
-	case $1 in valid|quote|err|once);;
+	case $1 in valid|quote|error|once);;
 	*) local e=${2-} f n m=; e=${e%/*}; __ev.valid "$e"||m="Invalid event name '$e'"
 		case $1$m in on|off|has)
 			(($#>2))||m="${2-}: missing callback"; n=${2#$e} n=${n#/}
 			case $n in _)n='$#';;*) n=$((n));; esac
 			case $1${m:+_} in has_)m=;REPLY=;;*) __ev.quote "${@:3}";REPLY+=' "${@:2:'"$n"$'}"\n';; esac
 		esac
-		e=bashup_event_$e f=${e/event/flag}; ! [[ $m ]]||__ev.err "$m"||return
+		e=bashup_event_$e f=${e/event/flag}; ! [[ $m ]]||__ev.error "$m"||return
 	esac
 	__ev."$@"
 }
-__ev.err(){ echo "$1">&2;return ${2-64};}
+__ev.error(){ echo "$1">&2;return ${2:-64};}
 __ev.valid(){ [[ ${1-} =~ ^[_[:alnum:]]+$ ]];}
 __ev.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
 __ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* && ! ${!f-} ]];}
@@ -19,11 +19,11 @@ __ev.on(){ __ev.has && return;[[ ! ${!f-} ]]&&eval $e+='$REPLY'||eval "${!e-};$R
 __ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval $e=$'"${n//\n"$REPLY"/\n}"';}
 __ev.emit(){ ${!f-};eval "${!e-}";}
 __ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
-__ev.all(){ e=${!e-};eval "${e//$'\n'/||return; }";}
-__ev.any(){ e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
+__ev.all(){ ${!f-};e=${!e-};eval "${e//$'\n'/||return; }";}
+__ev.any(){ ${!f-};e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
 __ev.resolve(){
 	${!f-};__ev.fire "$@";__ev.quote "$@"
-	readonly $f="eval __ev.err 'event \"'$1'\" already resolved' 70;return" $e="set -- $REPLY"
+	readonly $f="eval __ev.error 'event \"'$1'\" already resolved' 70;return" $e="set -- $REPLY"
 }
 __ev.resolved(){ [[ ${!f-} ]];}
 __ev.once(){ event on "${1%/*}" event off "$@" && event on "$@";}
