@@ -1,8 +1,18 @@
 # Practical Event Listeners for Bash
 
-`bashup.events` is a practical event listener/callback API for creating extensible bash programs.  It's small (~1.3k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event.  (You can even have "promises", of a sort!)
+`bashup.events` is a practical event listener/callback API for creating extensible bash programs.  It's small (~1.3k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event name.  (You can even have "promises", of a sort!)
 
-**Contents**
+Features include:
+
+* Running a callback each time something happens ([`event on`](#event-on), [`event emit`](#event-emit))
+* Running a callback the *next* time something happens, but not after that ([`event once`](#event-once))
+* Alert subscribers of an event once, making them re-subscribe for future occurrences ([`event fire`](#event-fire) )
+* Alert subscribers of a one-time only event or calculation... not just current subscribers, but *future* ones as well ([`event resolve`](#event-resolve))
+* Allow subscribed callbacks to veto a proc ess (e.g. validation rules), using [`event all`](#event-all)
+* Search for the first callback that can successfully handle something, using [`event any`](#event-any)
+
+
+#### Contents
 
 <!-- toc -->
 
@@ -40,7 +50,7 @@ Copy and paste the [code](bashup.events) into your script, or place it on `PATH`
 
 Sourcing `bashup.events` exposes one public function, `event`, that provides a variety of subcommands.  All of the primary subcommands take an event name as their first argument.
 
-Event names are any sequence of alphanumeric or `_` characters.  Invoking an event-taking subcommand with an invalid event name will return an exit code of 64 (EX_USAGE), and a message on stderr.
+Event names are any sequence of alphanumeric or `_` characters.  Invoking an event-taking subcommand of `event` with an invalid event name will return an exit code of 64 (EX_USAGE), and a message on stderr.
 
 #### event on
 
@@ -53,7 +63,7 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
 
 #### event emit
 
-`event emit` *event data...* invokes all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will **not** take effect until a subsequent `send` or `drain` of the event, and existing callbacks remain subscribed.
+`event emit` *event data...* invokes all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will **not** take effect until a subsequent occurrence of the event, and existing callbacks remain subscribed.
 
 ````sh
     $ event emit "event1"
