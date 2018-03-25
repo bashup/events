@@ -34,6 +34,7 @@ Other features include:
   * [event once](#event-once)
   * [event valid](#event-valid)
   * [event quote](#event-quote)
+  * [event error](#event-error)
 - [License](#license)
 
 <!-- tocstop -->
@@ -106,7 +107,7 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
 
 #### event fire
 
-`event fire` *event data...* fires a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  All callbacks are removed from the event, and new callbacks added during the firing will be invoked as soon as all previously-added callbacks have been invoked.  (Similar to Javascript promise resolution, except that an event can be fired more than once.)
+`event fire` *event data...* fires a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  All callbacks are removed from the event, and new any callbacks added during the firing will be invoked as soon as all the previously-added callbacks have been invoked.  (Similar to Javascript promise resolution, except that you can `fire` an event more than once.)
 
 ````sh
 # `event fire` removes callbacks and handles nesting:
@@ -124,10 +125,10 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
 
 ### Passing Arguments To Callbacks
 
-When emitting or firing an event, you can pass additional arguments that will be added to the end of the arguments supplied to the given callbacks.  The callbacks, however, will only receive these arguments if they were registered to do so, by adding a `/` at the end of the event name, followed by the maximum number of arguments the callback is prepared to receive:
+When invoking an event, you can pass additional arguments that will be added to the end of the arguments supplied to the given callbacks.  The callbacks, however, will only receive these arguments if they were registered to do so, by adding a `/` at the end of the event name, followed by the maximum number of arguments the callback is prepared to receive:
 
 ````sh
-# Callbacks can receive extra arguments sent by emit/fire:
+# Callbacks can receive extra arguments sent by emit/fire/resolve/all/any:
 
     $ event on   "event2"/2 echo "Args:"  # accept up to 2 arguments
     $ event fire "event2"   foo bar baz
@@ -135,7 +136,7 @@ When emitting or firing an event, you can pass additional arguments that will be
 
 ````
 
-The reason an argument count is required, is because one purpose of  an event system is to be *extensible*.  If an event adds new arguments over time, old callbacks may break if they weren't written in such a way as to ignore the new arguments.  Requiring an explicit request for arguments avoids this problem.
+The reason an argument count is required, is because one purpose of an event system is to be *extensible*.  If an event adds new arguments over time, old callbacks may break if they weren't written in such a way as to ignore the new arguments.  Requiring an explicit request for arguments avoids this problem.
 
 If the nature of the event is that it emits a *variable* number of arguments, however, you can register your callback with `/_`, which means "receive *all* the arguments, no matter how many".  You should only use it in places where you can definitely handle any number of arguments, or else you may run into unexpected behavior.
 
@@ -212,7 +213,7 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 #### event resolve
 
-If you have a truly one-time event, but subscribers could "miss it" by subscribing too late, you can use `event resolve` to "permanently fire" an event with a specific set of arguments.  Once this is done, all future `event on` calls for that event will invoke the callback *immediately* with the previously-given arguments.
+If you have a truly one-time event, but subscribers could "miss it" by subscribing too late, you can use `event resolve` to "permanently `fire`" an event with a specific set of arguments.  Once this is done, all future `event on` calls for that event will invoke the callback *immediately* with the previously-given arguments.
 
 There is no way to "unresolve" a resolved event within the current shell.  Trying to `resolve`, `emit`, `fire`, `any` or `all` an already-resolved event will result in an error message and a failure return of 70 (`EX_SOFTWARE`).
 
