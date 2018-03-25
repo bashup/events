@@ -1,6 +1,6 @@
-# A Tiny Event System for Bash
+# Practical Event Listeners for Bash
 
-`bashup.events` is a practical event listener/callback API for bash programs.  It's small (~1.3k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used) .  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event.  (You can even have "promises", of a sort!)
+`bashup.events` is a practical event listener/callback API for creating extensible bash programs.  It's small (~1.3k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event.  (You can even have "promises", of a sort!)
 
 **Contents**
 
@@ -8,6 +8,11 @@
 
 - [Installation, Requirements And Use](#installation-requirements-and-use)
 - [Basic Operations](#basic-operations)
+  * [event on](#event-on)
+  * [event emit](#event-emit)
+  * [event off](#event-off)
+  * [event has](#event-has)
+  * [event fire](#event-fire)
 - [Passing Arguments](#passing-arguments)
 - [Promise-Like Events](#promise-like-events)
   * [event resolve / event resolved](#event-resolve--event-resolved)
@@ -36,43 +41,41 @@ Sourcing `bashup.events` exposes one public function, `event`, that provides a v
 
 Event names are any sequence of alphanumeric or `_` characters.  Invoking an event-taking subcommand with an invalid event name will return an exit code of 64 (EX_USAGE), and a message on stderr.
 
-The primary subcommands are:
+#### event on
 
-* `event on` *event cmd [args...]* -- subscribes *cmd args...* as a callback to *event*, if it's not already added
-* `event off` *event cmd [args...]* -- unsubscribes the *cmd args...* callback from *event*
-* `event has` *event [cmd [args...]]* -- returns truth if *event* has a registered callback of *cmd args...*, or if no *cmd...* is given, returns truth if *any* callbacks have been registered for *event*.
-* `event emit` *event data...* -- emit a "repeatable" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will not take effect until a subsequent `send` or `drain` of the event, and existing callbacks remain subscribed.
-* `event fire` *event data...* -- fire a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each  callback.  All callbacks are removed from the event, and new callbacks added during the firing will be invoked as soon as all previously-added callbacks have been invoked.  (Similar to Javascript promise resolution.)
-
-
-
-Using these functions, you can implement both repeatable and one-shot events, e.g.:
+`event on` *event cmd [args...]* subscribes *cmd args...* as a callback to *event*, if it's not already added:
 
 ````sh
-# Subscribe to events using `event on`
-
     $ event on "event1" echo "got event1"
     $ event on "event1" echo "is this cool or what?"
+````
 
-# Invoke callbacks using `event emit`
+#### event emit
 
+`event emit` *event data...* -- emit a "repeatable" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will not take effect until a subsequent `send` or `drain` of the event, and existing callbacks remain subscribed.
+
+````sh
     $ event emit "event1"
     got event1
     is this cool or what?
+````
 
-# Unsubscribe using `event off`:
+#### event off
 
+`event off` *event cmd [args...]* unsubscribes the *cmd args...* callback from *event*
+
+````sh
     $ event off "event1" echo "got event1"
     $ event emit "event1"
     is this cool or what?
+````
 
-# Test susbscription with `event has`
+#### event has
 
-    $ event has "event1" echo "is this cool or what?" && echo "cool!"
-    cool!
-    $ event has "event1" echo "got event1" || echo "nope!"
-    nope!
+* `event has` *event* -- returns truth if *event* has any registered callbacks.
+* `event has` *event cmd [args...]* returns truth if *cmd args...* has been registered as a callback for *event*.
 
+````sh
 # `event has` with no callback tests for any callbacks at all
 
     $ event has "event1" && echo "yes, there are some callbacks"
@@ -81,6 +84,20 @@ Using these functions, you can implement both repeatable and one-shot events, e.
     $ event has "something_else" || echo "but not for this other event"
     but not for this other event
 
+# Test for specific callback susbscription:`
+
+    $ event has "event1" echo "is this cool or what?" && echo "cool!"
+    cool!
+    $ event has "event1" echo "got event1" || echo "nope!"
+    nope!
+
+````
+
+#### event fire
+
+`event fire` *event data...* fires a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  All callbacks are removed from the event, and new callbacks added during the firing will be invoked as soon as all previously-added callbacks have been invoked.  (Similar to Javascript promise resolution.)
+
+````sh
 # `event fire` removes callbacks and handles nesting:
 
     $ mycallback() { event on event1 echo "nested!"; }
@@ -184,7 +201,11 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 #### event resolve / event resolved
 
-If you have a truly one-time event that subscribers could "miss" by subscribing too late, you can use `event resolve` to "permanently fire" an event with a specific set of arguments.  Once an event has been resolved, all future `event on` calls for the event will invoke the callback immediately instead, and all future `event off` calls will do nothing.  `event resolved` returns truth if `event resolve` has been called.  There is no way to "unresolve" a resolved event within the current shell.
+If you have a truly one-time event that subscribers could "miss" by subscribing too late, you can use `event resolve` to "permanently fire" an event with a specific set of arguments.
+
+Once an event has been resolved, all future `event on` calls for the event will invoke the callback immediately instead, and all future `event off` calls will do nothing.
+
+`event resolved` returns truth if `event resolve` has been called for the specified event.  There is no way to "unresolve" a resolved event within the current shell.
 
 ````sh
 # Subscribers before the resolve will be fired at resolve:
@@ -288,7 +309,7 @@ If you have a truly one-time event that subscribers could "miss" by subscribing 
 
 #### event once
 
-`event once` *event cmd [args...]* is like `event on`, except that the callback is removed before it's invoked, ensuring it will be called at most once, even if *event* is emitted multiple times:
+`event once` *event cmd [args...]* is like `event on`, except that the callback is unsubscribed before it's invoked, ensuring it will be called at most once, even if *event* is emitted multiple times in a row:
 
 ````sh
     $ event once "something"/_ echo
@@ -299,7 +320,7 @@ If you have a truly one-time event that subscribers could "miss" by subscribing 
 
 #### event valid
 
-`event valid` *string* returns truth if *string* is safe to use as an event name (without an argument count).
+`event valid` *string* returns truth if *string* is safe to use as an event name.  (It must not contain an argument count.)
 
 ````sh
     $ event valid "foo"     && echo yep
