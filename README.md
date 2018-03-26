@@ -6,10 +6,10 @@ Other features include:
 
 * Running a callback each time something happens ([`event on`](#event-on), [`event emit`](#event-emit))
 * Running a callback the *next* time something happens, but not after that ([`event once`](#event-once))
-* Alert subscribers of an event once, making them re-subscribe for future occurrences ([`event fire`](#event-fire) )
-* Alert subscribers of a one-time only event or calculation... not just current subscribers, but *future* ones as well ([`event resolve`](#event-resolve))
-* Allow subscribed callbacks to veto a process (e.g. validation rules), using [`event all`](#event-all)
-* Search for the first callback that can successfully handle something, using [`event any`](#event-any)
+* Alerting subscribers of an event once, making them re-subscribe for future occurrences ([`event fire`](#event-fire) )
+* Alerting subscribers of a one-time only event or calculation... not just current subscribers, but *future* ones as well ([`event resolve`](#event-resolve))
+* Allowing subscribed callbacks to veto a process (e.g. validation rules), using [`event all`](#event-all)
+* Searching for the first callback that can successfully handle something, using [`event any`](#event-any)
 
 
 #### Contents
@@ -152,7 +152,7 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 ````
 
-`event on`, `event off`, and `event has` all accept argument counts when adding, removing, or checking for callbacks.  Callbacks with different argument counts are considered to be *different* callbacks:
+[`event on`](#event-on), [`event off`](#event-off), and [`event has`](#event-has) all accept argument counts when adding, removing, or checking for callbacks.  Callbacks with different argument counts are considered to be *different* callbacks:
 
 ````sh
 # Only one argument:
@@ -213,7 +213,7 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
 
 #### event resolve
 
-If you have a truly one-time event, but subscribers could "miss it" by subscribing too late, you can use `event resolve` to "permanently `fire`" an event with a specific set of arguments.  Once this is done, all future `event on` calls for that event will invoke the callback *immediately* with the previously-given arguments.
+If you have a truly one-time event, but subscribers could "miss it" by subscribing too late, you can use `event resolve` to "permanently [`fire`](#event-fire)" an event with a specific set of arguments.  Once this is done, all future `event on` calls for that event will invoke the callback *immediately* with the previously-given arguments.
 
 There is no way to "unresolve" a resolved event within the current shell.  Trying to `resolve`, `emit`, `fire`, `any` or `all` an already-resolved event will result in an error message and a failure return of 70 (`EX_SOFTWARE`).
 
@@ -258,7 +258,7 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
 #### event all
 
-`event all` *event data*... works like `event emit`, except that execution stops after the first callback that returns false (i.e., a non-zero exit code), and that exit code is returned.  Truth is returned if all events return truth.
+`event all` *event data*... works like [`event emit`](#event-emit), except that execution stops after the first callback that returns false (i.e., a non-zero exit code), and that exit code is returned.  Truth is returned if all events return truth.
 
 ````sh
 # Use an event to validate a password
@@ -286,7 +286,7 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
 #### event any
 
-`event any` *event data...* also works like `event emit`, except that execution stops on the first callback to return truth (i.e. a zero exit code).  An exit code of 1 is returned if all events return non-zero exist codes.
+`event any` *event data...* also works like [`event emit`](#event-emit), except that execution stops on the first callback to return truth (i.e. a zero exit code).  An exit code of 1 is returned if all events return non-zero exit codes.
 
 ````sh
     $ match() { echo "checking for $1"; REPLY=$2; [[ $1 == $3 ]]; }
@@ -312,7 +312,7 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
 #### event once
 
-`event once` *event cmd [args...]* is like `event on`, except that the callback is unsubscribed before it's invoked, ensuring it will be called at most once, even if *event* is emitted multiple times in a row:
+`event once` *event cmd [args...]* is like [`event on`](#event-on), except that the callback is unsubscribed before it's invoked, ensuring it will be called at most once, even if *event* is emitted multiple times in a row:
 
 ````sh
     $ event once "something"/_ echo
