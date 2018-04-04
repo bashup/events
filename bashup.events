@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 event(){ case $1 in error|quote|encode);; *)
-	local e f n=0;__ev.encode "${2-}";e=bashup_event_$REPLY f=${e/event/flag}
-	case $1 in emit)shift;${!f-};eval "${!e-}"; return ;;on|off|has)
-		[[ ${3-} != @* || $3 == @*[^_0-9] ]]||{
-			n=${3#@}; set -- "$1" "$2" "${@:4}"; case $n in _)n='$#';;*) n=$((n));; esac
-		}
+	__ev.encode "${2-}";local f n e=bashup_event_$REPLY;f=${e/event/flag}
+	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|off|has)
+		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=${3#@};; esac; ${n+
+		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
 			has/[12]) REPLY=;; */[12]) set error "${2-}: missing callback";;
-			*) __ev.quote "${@:3}";[[ $n == 0 ]]||REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
+			*) __ev.quote "${@:3}";[[ ${n-0} == 0 ]]||REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
 		esac
 	esac
 esac ;__ev."$@";}

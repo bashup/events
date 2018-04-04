@@ -56,6 +56,16 @@ And what if you try to pass an arg count to something other than has/on/off? (th
     $ event fire foo @_ bar baz
     @_ bar baz
 ````
+
+Or an invalid arg indicator to has/on/off? (they're considered part of the command)
+
+````sh
+    $ event on bar @9.2 quiz
+    $ event emit bar || echo [$?]
+    */bashup.events: line 4: @9.2: command not found (glob)
+    [127]
+````
+
 Or try to do something with an already-resolved promise:
 
 ````sh
