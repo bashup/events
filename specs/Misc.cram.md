@@ -6,23 +6,15 @@ We want to test all this with `-eu`, to catch undefined variables and dangling f
     $ source bashup.events; set -eu
 ````
 
-We also want to make sure that validation errors work:
-
-````sh
-    $ ( event on foo.bar baz ) || echo [$?]
-    Invalid event name 'foo.bar'
-    [64]
-````
-
-Also, what happens if you don't pass anything to event on, .has, or .off?
+e.g. What happens if you don't pass a callback to event on, .has, or .off?
 
 ````sh
     $ ( event on foo ) || echo [$?]
     foo: missing callback
     [64]
 
-    $ ( event has ) || echo [$?]
-    Invalid event name ''
+    $ ( event on ) || echo [$?]
+    : missing callback
     [64]
 
     $ ( event has x ) || echo [$?]
@@ -31,30 +23,38 @@ Also, what happens if you don't pass anything to event on, .has, or .off?
 
     $ ( event has x ); echo [$?]
     [0]
+
 ````
 
-Or don't give an event to fire or emit?
+Or don't give an event to fire or emit?  (they're treated as an empty string)
 
 ````sh
+    $ ( event has ) || echo [$?]
+    [1]
+
+    $ event on "" echo empty-string event
+
+    $ ( event has ) && echo yes
+    yes
+
     $ ( event emit ) || echo [$?]
-    Invalid event name ''
-    [64]
+    empty-string event
 
     $ ( event fire ) || echo [$?]
-    Invalid event name ''
-    [64]
+    empty-string event
+
 ````
 
-And what if you fire or emit an arg-limited event?
+And what if you try to pass an arg count to something other than has/on/off? (they're treated as arguments)
 
 ````sh
-    $ event on foo/_ echo
+    $ event on foo @_ echo
 
-    $ event emit foo/7 bar baz
-    bar baz
+    $ event emit foo @7 bar baz
+    @7 bar baz
 
-    $ event fire foo/99 bar baz
-    bar baz
+    $ event fire foo @_ bar baz
+    @_ bar baz
 ````
 Or try to do something with an already-resolved promise:
 

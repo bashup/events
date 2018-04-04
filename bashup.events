@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
 event() {
-	case $1 in valid|quote|error|once);;
-	*) local e=${2-} f n m=; e=${e%/*}; __ev.valid "$e"||m="Invalid event name '$e'"
-		case $1$m in on|off|has)
-			(($#>2))||m="${2-}: missing callback"; n=${2#$e} n=${n#/}
-			case $n in _)n='$#';;*) n=$((n));; esac
-			case $1${m:+_} in has_)m=;REPLY=;;*) __ev.quote "${@:3}";REPLY+=' "${@:2:'"$n"$'}"\n';; esac
+	local e f n=0;__ev.encode "${2-}";e=bashup_event_$REPLY f=${e/event/flag}
+	case $1 in emit)shift;${!f-};eval "${!e-}"; return ;;encode)return ;;on|off|has)
+		[[ ${3-} != @* || $3 == @*[^_0-9] ]]||{
+			n=${3#@}; set -- "$1" "$2" "${@:4}"; case $n in _)n='$#';;*) n=$((n));; esac
+		}
+		case $1/$# in
+			has/[12]) REPLY=;; */[12]) __ev.error "${2-}: missing callback"; return ;;
+			*) __ev.quote "${@:3}";[[ $n == 0 ]]||REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n';;
 		esac
-		e=bashup_event_$e f=${e/event/flag}; ! [[ $m ]]||__ev.error "$m"||return
 	esac
 	__ev."$@"
 }
 __ev.error(){ echo "$1">&2;return ${2:-64};}
-__ev.valid(){ [[ ${1-} =~ ^[_[:alnum:]]+$ ]];}
-__ev.quote(){ REPLY=""; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
+__ev.quote(){ REPLY=; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
 __ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* && ! ${!f-} ]];}
 __ev.on(){ __ev.has && return;[[ ! ${!f-} ]]&&eval $e+='$REPLY'||eval "${!e-};$REPLY";}
 __ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval $e=$'"${n//\n"$REPLY"/\n}"';}
-__ev.emit(){ ${!f-};eval "${!e-}";}
 __ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
 __ev.all(){ ${!f-};e=${!e-};eval "${e//$'\n'/||return; }";}
 __ev.any(){ ${!f-};e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
@@ -27,3 +26,11 @@ __ev.resolve(){
 }
 __ev.resolved(){ [[ ${!f-} ]];}
 __ev.once(){ event on "${1%/*}" event off "$@" && event on "$@";}
+__ev_jit(){
+	local r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
+	while [[ "$s" ]]; do
+		r=${s::1};s=${s//$r/};printf -v r 'REPLY=${REPLY//%q/_%02x_};' "$r" "'$r";eval "$r";__ev_jit+=$r
+	done
+	eval '__ev.encode(){ local s LC_ALL=C;REPLY=${1//_/__};'\
+	"${__ev_jit-}"' [[ $REPLY != *[^_[:alnum:]]* ]] || __ev_jit "${REPLY//[_[:alnum:]]/}";}'
+};__ev_jit ''

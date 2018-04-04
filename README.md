@@ -1,6 +1,6 @@
 # Practical Event Listeners for Bash
 
-`bashup.events` is a practical event listener/callback API for creating extensible bash programs.  It's small (~1.3k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any valid identifier can be an event name.  (You can even have "[promises](#promise-like-events)", of a sort!)  Callbacks can be any command or function plus any number of arguments, and can even opt to receive [additional arguments supplied by the event](#passing-arguments-to-callbacks).
+`bashup.events` is an event listener/callback API for creating extensible bash programs.  It's small (<1.8k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any string can be an event name.  (You can even have "[promises](#promise-like-events)", of a sort!)  Callbacks can be any command or function plus any number of arguments, and can even opt to receive [additional arguments supplied by the event](#passing-arguments-to-callbacks).
 
 Other features include:
 
@@ -32,7 +32,7 @@ Other features include:
   * [event any](#event-any)
 - [Other Operations](#other-operations)
   * [event once](#event-once)
-  * [event valid](#event-valid)
+  * [event encode](#event-encode)
   * [event quote](#event-quote)
   * [event error](#event-error)
 - [License](#license)
@@ -51,7 +51,7 @@ Copy and paste the [code](bashup.events) into your script, or place it on `PATH`
 
 Sourcing `bashup.events` exposes one public function, `event`, that provides a variety of subcommands.  All of the primary subcommands take an event name as their first argument.
 
-Event names are any sequence of alphanumeric or `_` characters.  Invoking an event-taking subcommand of `event` with an invalid event name will return an exit code of 64 (EX_USAGE), and a message on stderr.
+Event names can be any string, but performance is best if you limit them to pure ASCII alphanumeric or `_` characters, as all other characters have to be encoded at the start of each event command.  (And the larger the character set used, the slower the encoding process becomes.)
 
 #### event on
 
@@ -125,70 +125,70 @@ Event names are any sequence of alphanumeric or `_` characters.  Invoking an eve
 
 ### Passing Arguments To Callbacks
 
-When invoking an event, you can pass additional arguments that will be added to the end of the arguments supplied to the given callbacks.  The callbacks, however, will only receive these arguments if they were registered to do so, by adding a `/` at the end of the event name, followed by the maximum number of arguments the callback is prepared to receive:
+When invoking an event, you can pass additional arguments that will be added to the end of the arguments supplied to the given callbacks.  The callbacks, however, will only receive these arguments if they were registered to do so, by adding an extra argument after the event name: an  `@` followed by the maximum number of arguments the callback is prepared to receive:
 
 ````sh
 # Callbacks can receive extra arguments sent by emit/fire/resolve/all/any:
 
-    $ event on   "event2"/2 echo "Args:"  # accept up to 2 arguments
-    $ event fire "event2"   foo bar baz
+    $ event on   "event2" @2 echo "Args:"  # accept up to 2 arguments
+    $ event fire "event2" foo bar baz
     Args: foo bar
 
 ````
 
 The reason an argument count is required, is because one purpose of an event system is to be *extensible*.  If an event adds new arguments over time, old callbacks may break if they weren't written in such a way as to ignore the new arguments.  Requiring an explicit request for arguments avoids this problem.
 
-If the nature of the event is that it emits a *variable* number of arguments, however, you can register your callback with `/_`, which means "receive *all* the arguments, no matter how many".  You should only use it in places where you can definitely handle any number of arguments, or else you may run into unexpected behavior.
+If the nature of the event is that it emits a *variable* number of arguments, however, you can register your callback with `@_`, which means "receive *all* the arguments, no matter how many".  You should only use it in places where you can definitely handle any number of arguments, or else you may run into unexpected behavior.
 
 ````sh
 # Why variable arguments lists aren't the default:
 
-    $ event on   "cleanup"/_ echo "rm -rf"
-    $ event emit "cleanup"   foo
+    $ event on   "cleanup" @_ echo "rm -rf"
+    $ event emit "cleanup" foo
     rm -rf foo
 
-    $ event emit "cleanup"   foo /   # New release...  "cleanup" event added a new argument!
+    $ event emit "cleanup" foo /   # New release...  "cleanup" event added a new argument!
     rm -rf foo /
 
 ````
 
-[`event on`](#event-on), [`event off`](#event-off), and [`event has`](#event-has) all accept argument counts when adding, removing, or checking for callbacks.  Callbacks with different argument counts are considered to be *different* callbacks:
+[`event on`](#event-on), [`event once`](#event-once), [`event off`](#event-off), and [`event has`](#event-has) all accept argument count specifiers when adding, removing, or checking for callbacks.  Callbacks with different argument counts are considered to be *different* callbacks:
 
 ````sh
 # Only one argument:
 
-    $ event on   "myevent"/1 echo
-    $ event emit "myevent"   foo bar baz
+    $ event on   "myevent" @1 echo
+    $ event emit "myevent" foo bar baz
     foo
 
 # Different count = different callbacks:
 
-    $ event has "myevent"/1 echo && echo got it
+    $ event has "myevent" @1 echo && echo got it
     got it
-    $ event has "myevent"/2 echo || echo nope
+    $ event has "myevent" @2 echo || echo nope
     nope
 
 # Add 2 argument version:
 
-    $ event on   "myevent/2" echo
-    $ event emit "myevent"   foo bar baz
+    $ event on   "myevent" @2 echo
+    $ event emit "myevent" foo bar baz
     foo
     foo bar
 
 # Remove the 2-arg version, add unlimited version:
 
-    $ event off "myevent"/2 echo
-    $ event on  "myevent"/_ echo
+    $ event off "myevent" @2 echo
+    $ event on  "myevent" @_ echo
 
-    $ event emit myevent foo bar baz
+    $ event emit "myevent" foo bar baz
     foo
     foo bar baz
 
 # Unlimited version is distinct, too:
 
-    $ event has "myevent"/_ echo && echo got it
+    $ event has "myevent" @_ echo && echo got it
     got it
-    $ event has "myevent"/2 echo || echo nope
+    $ event has "myevent" @2 echo || echo nope
     nope
 
 # As is the zero-arg version:
@@ -201,11 +201,11 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
     $ event on  "myevent" echo
     $ event has "myevent" echo && echo got it
     got it
-    $ event has "myevent"/0 echo && echo got it
+    $ event has "myevent" @0 echo && echo got it
     got it
 
-    $ event off "myevent"/0 echo
-    $ event has "myevent"   echo || echo nope
+    $ event off "myevent" @0 echo
+    $ event has "myevent" echo || echo nope
     nope
 ````
 
@@ -220,8 +220,8 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 ````sh
 # Subscribers before the resolve will be fired upon resolve:
 
-    $ event on "promised" event on "promised/1" echo "Nested:"
-    $ event on "promised/1" echo "Plain:"
+    $ event on "promised" event on "promised" @1 echo "Nested:"
+    $ event on "promised" @1 echo "Plain:"
 
     $ event resolve "promised" value
     Plain: value
@@ -229,10 +229,10 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
 # Subscribers after the resolve are fired immediately:
 
-    $ event on "promised" event on "promised/1" echo "Nested:"
+    $ event on "promised" event on "promised" @1 echo "Nested:"
     Nested: value
 
-    $ event on "promised/1" echo "Plain:"
+    $ event on "promised" @1 echo "Plain:"
     Plain: value
 
 # And a resolved event never "has" any subscribers:
@@ -265,10 +265,10 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
     $ validate() { echo "validating: $1"; [[ $3 =~ $2 ]]; }
 
-    $ event on "password_check"/1 validate "has a number" '[0-9]+'
-    $ event on "password_check"/1 validate "is 8+ chars" ........
-    $ event on "password_check"/1 validate "has uppercase" '[A-Z]'
-    $ event on "password_check"/1 validate "has lowercase" '[a-z]'
+    $ event on "password_check" @1 validate "has a number" '[0-9]+'
+    $ event on "password_check" @1 validate "is 8+ chars" ........
+    $ event on "password_check" @1 validate "has uppercase" '[A-Z]'
+    $ event on "password_check" @1 validate "has lowercase" '[a-z]'
 
     $ event all "password_check" 'foo27' || echo "fail!"
     validating: has a number
@@ -291,9 +291,9 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 ````sh
     $ match() { echo "checking for $1"; REPLY=$2; [[ $1 == $3 ]]; }
 
-    $ event on "lookup"/1 match a "got one!"
-    $ event on "lookup"/1 match b "number two"
-    $ event on "lookup"/1 match c "third time's the charm"
+    $ event on "lookup" @1 match a "got one!"
+    $ event on "lookup" @1 match b "number two"
+    $ event on "lookup" @1 match c "third time's the charm"
 
     $ event any "lookup" b && echo "match: $REPLY"
     checking for a
@@ -315,21 +315,23 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 `event once` *event cmd [args...]* is like [`event on`](#event-on), except that the callback is unsubscribed before it's invoked, ensuring it will be called at most once, even if *event* is emitted multiple times in a row:
 
 ````sh
-    $ event once "something"/_ echo
+    $ event once "something" @_ echo
     $ event emit "something" this that
     this that
     $ event emit "something" more stuff
 ````
 
-#### event valid
+#### event encode
 
-`event valid` *string* returns truth if *string* is safe to use as an event name.  (It must not contain an argument count.)
+`event encode` *string* sets `$REPLY` to an encoded version of *string* that is safe to use as part of a bash variable name (i.e. ascii alphanumerics and `_`).  Underscores are doubled and all other characters are encoded as hex digits between two underscores.
 
 ````sh
-    $ event valid "foo"     && echo yep
-    yep
-    $ event valid "foo.bar" || echo nope
-    nope
+    $ event encode "foo"     && echo $REPLY
+    foo
+    $ event encode "foo.bar" && echo $REPLY
+    foo_2e_bar
+    $ event encode "foo_bar" && echo $REPLY
+    foo__bar
 ````
 
 #### event quote
