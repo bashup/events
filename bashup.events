@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 event(){ case $1 in error|quote|encode);; *)
-	__ev.encode "${2-}";local f n e=bashup_event_$REPLY;f=${e/event/flag}
+	__ev.encode "${2-}";local f n= e=bashup_event_$REPLY;f=${e/event/flag}
 	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|once|off|has)
-		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=${3#@};; esac; ${n+
+		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=${3#@};; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
 			has/[12]) REPLY=;; */[12]) set error "${2-}: missing callback";;
-			*) __ev.quote "${@:3}";[[ ${n-0} == 0 ]]||REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
+			*) __ev.quote "${@:3}";! ((${n/\$#/1}))||REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
 		esac
 	esac
 esac ;__ev."$@";}
@@ -23,7 +23,7 @@ __ev.resolve(){
 	readonly $f="eval __ev.error 'event \"'$1'\" already resolved' 70;return" $e="set -- $REPLY"
 }
 __ev.resolved(){ [[ ${!f-} ]];}
-__ev.once(){ n=${n-0} n=${n/\$#/_}; event on "$1" @$n __ev_once $# @${n-0} "$@";}
+__ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" @$n __ev_once $# @$n "$@";}
 __ev_once(){ event off "$3" "$2" __ev_once "${@:1:$1+2}"; "${@:4}";}
 __ev_jit(){
 	local r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
