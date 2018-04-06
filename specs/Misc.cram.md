@@ -94,3 +94,21 @@ Or try to do something with an already-resolved promise:
     event "promised" already resolved
     [70]
 ````
+
+Also, "event once" shouldn't leave anything behind in the event, and should handle  various argument counts (the `@_` case is tested in the README):
+
+````sh
+    $ event once foobar echo baz
+    $ event emit foobar
+    baz
+
+    $ event has foobar || echo nope
+    nope
+
+    $ event once foobar @2 echo fish
+    $ event emit foobar baz spam thingy
+    fish baz spam
+
+    $ event has foobar || echo nope
+    nope
+````
