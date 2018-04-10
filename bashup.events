@@ -2,7 +2,7 @@
 event(){ case $1 in error|quote|encode);; *)
 	__ev.encode "${2-}";local f n= e=bashup_event_$REPLY;f=${e/event/flag}
 	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|once|off|has)
-		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=${3#@};; esac; ${n:+
+		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
 			has/[12]) REPLY=;; */[12]) set error "${2-}: missing callback";;

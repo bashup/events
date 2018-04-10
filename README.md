@@ -168,9 +168,9 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
     $ event has "myevent" @2 echo || echo nope
     nope
 
-# Add 2 argument version:
+# Add 2 argument version (numeric value is what's used):
 
-    $ event on   "myevent" @2 echo
+    $ event on   "myevent" @02 echo
     $ event emit "myevent" foo bar baz
     foo
     foo bar
@@ -196,7 +196,7 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
     $ event has "myevent" echo || echo nope
     nope
 
-# But the zero-arg version can be implicit or explicit:
+# But the zero-arg version can be implicit or explicit, w/or without leading zeros:
 
     $ event on  "myevent" echo
     $ event has "myevent" echo && echo got it
@@ -204,7 +204,7 @@ If the nature of the event is that it emits a *variable* number of arguments, ho
     $ event has "myevent" @0 echo && echo got it
     got it
 
-    $ event off "myevent" @0 echo
+    $ event off "myevent" @00 echo
     $ event has "myevent" echo || echo nope
     nope
 ````
@@ -320,6 +320,8 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
     this that
     $ event emit "something" more stuff
 ````
+
+(Note: a callback added by `event once` cannot be removed by `event off`; if you need to be able to remove such a callback you should use `event on` instead and make the callback remove itself with `event off`.)
 
 #### event encode
 
