@@ -64,7 +64,7 @@ Event names can be any string, but performance is best if you limit them to pure
 
 #### event emit
 
-`event emit` *event data...* invokes all the callbacks for *event*, passing *data...* as additional arguments to each callback.  Callbacks added to the event while this function is running will **not** take effect until a subsequent occurrence of the event, and existing callbacks remain subscribed.
+`event emit` *event data...* invokes all the callbacks for *event*, passing *data...* as additional arguments to any callbacks that [registered to receive them](#passing-arguments-to-callbacks).  Callbacks added to the event while the `emit` is occurring will **not** be invoked until a subsequent occurrence of the event, and the already-added callbacks will remain subscribed (unless they unsubscribe themselves, or were registered with [`event once`](#event-once)).
 
 ````sh
     $ event emit "event1"
@@ -107,7 +107,9 @@ Event names can be any string, but performance is best if you limit them to pure
 
 #### event fire
 
-`event fire` *event data...* fires a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to each callback.  All callbacks are removed from the event, and new any callbacks added during the firing will be invoked as soon as all the previously-added callbacks have been invoked.  (Similar to Javascript promise resolution, except that you can `fire` an event more than once.)
+`event fire` *event data...* fires a "one shot" event, by invoking all the callbacks for *event*, passing *data...* as additional arguments to any callbacks that [registered to receive them](#passing-arguments-to-callbacks).  All callbacks are removed from the event, and any new callbacks added during the firing will be invoked as soon as all the previously-added callbacks have been invoked (and then are also removed from the event).
+
+The overall idea is somewhat similar to the Javascript "promise" resolution algorithm, except that you can `fire` an event more than once, and there is no "memory" of the arguments.  (See [`event resolve`](#event-resolve) if you want something closer to a JS Promise.)
 
 ````sh
 # `event fire` removes callbacks and handles nesting:
