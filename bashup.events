@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 event(){ case $1 in error|quote|encode);; *)
-	__ev.encode "${2-}";local f n= e=bashup_event_$REPLY;f=${e/event/flag}
+	__ev.encode "${2-}";local f n='' e=bashup_event_$REPLY;f=${e/event/flag}
 	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|once|off|has)
 		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
-			has/[12]) REPLY=;; */[12]) set error "${2-}: missing callback";;
-			*) __ev.quote "${@:3}";! ((${n/\$#/1}))||REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
+			has/[12]) REPLY=;; */[12]) set -- error "${2-}: missing callback";;
+			*) __ev.quote "${@:3}";((${n/\$#/1}))&&REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
 		esac
 	esac
 esac ;__ev."$@";}
-__ev.error(){ echo "$1">&2;return ${2:-64};}
-__ev.quote(){ REPLY=; printf -v REPLY "${@+ %q}" "${@-}"; REPLY=${REPLY# };}
+__ev.error(){ echo "$1">&2;return "${2:-64}";}
+__ev.quote(){ REPLY=; ${@+printf -v REPLY ' %q' "$@"}; REPLY=${REPLY# };}
 __ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* && ! ${!f-} ]];}
-__ev.on(){ __ev.has && return;[[ ! ${!f-} ]]&&eval $e+='$REPLY'||eval "${!e-};$REPLY";}
-__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval $e=$'"${n//\n"$REPLY"/\n}"';}
+__ev.on(){ __ev.has && return;if [[ ! ${!f-} ]];then eval "$e"+='$REPLY';else eval "${!e-};$REPLY";fi;}
+__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';}
 __ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
 __ev.all(){ ${!f-};e=${!e-};eval "${e//$'\n'/||return; }";}
 __ev.any(){ ${!f-};e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
 __ev.resolve(){
 	${!f-};__ev.fire "$@";__ev.quote "$@"
-	readonly $f="eval __ev.error 'event \"'$1'\" already resolved' 70;return" $e="set -- $REPLY"
+	readonly "$f=eval __ev.error 'event \"'$1'\" already resolved' 70;return" "$e=set -- $REPLY"
 }
 __ev.resolved(){ [[ ${!f-} ]];}
-__ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" @$n __ev_once $# @$n "$@";}
+__ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" "@$n" __ev_once $# "@$n" "$@";}
 __ev_once(){ event off "$3" "$2" __ev_once "${@:1:$1+2}"; "${@:4}";}
 __ev_jit(){
 	local r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
