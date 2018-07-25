@@ -33,6 +33,8 @@ Other features include:
 - [Other Operations](#other-operations)
   * [event once](#event-once)
   * [event encode](#event-encode)
+  * [event decode](#event-decode)
+  * [event list](#event-list)
   * [event quote](#event-quote)
   * [event error](#event-error)
 - [License](#license)
@@ -327,15 +329,43 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
 #### event encode
 
-`event encode` *string* sets `$REPLY` to an encoded version of *string* that is safe to use as part of a bash variable name (i.e. ascii alphanumerics and `_`).  Underscores are doubled and all other characters are encoded as hex digits between two underscores.
+`event encode` *string* sets `$REPLY` to an encoded version of *string* that is safe to use as part of a bash variable name (i.e. ascii alphanumerics and `_`).  Underscores and all other non-alphanumerics are encoded as an underscore and two hex digits.
 
 ````sh
     $ event encode "foo"     && echo $REPLY
     foo
     $ event encode "foo.bar" && echo $REPLY
-    foo_2e_bar
+    foo_2ebar
     $ event encode "foo_bar" && echo $REPLY
-    foo__bar
+    foo_5fbar
+````
+
+For performance reasons, the function that handles event encoding is JITted.  Every time new non-ASCII or non-alphanumeric characters are seen, the function is rewritten to efficiently handle encoding them.  This makes encoding extremely fast when a program only ever uses a handful of punctuation characters in event names or strings passed to `event encode`.  Encoding arbitrary strings (or using them as event names) is not recommended, however, since this will "train" the encoder to run more slowly for *all* `event` operations from then on.
+
+#### event decode
+
+`event decode` *string* sets `$REPLY` to the original event name for *string*, turning the encoded characters back to their original values.  If multiple arguments are given, `REPLY` is an array of results.
+
+````sh
+    $ event decode "foo_2ebar_2dbaz" && echo $REPLY
+    foo.bar-baz
+
+    $ event decode "_2fspim" "_2bspam" && printf '%s\n' "${REPLY[@]}"
+    /spim
+    +spam
+````
+
+#### event list
+
+`event list` *prefix* sets `REPLY` to an array of currently-defined event names beginning with *prefix*.
+
+````sh
+    $ event list "event" && printf '%s\n' "${REPLY[@]}"
+    event1
+    event2
+
+    $ event list "lookup" && printf '%s\n' "${REPLY[@]}"
+    lookup
 ````
 
 #### event quote

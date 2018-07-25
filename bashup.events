@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-event(){ case $1 in error|quote|encode);; *)
+event(){ case $1 in error|quote|encode|decode);; *)
 	__ev.encode "${2-}";local f n='' e=bashup_event_$REPLY;f=${e/event/flag}
 	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|once|off|has)
 		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
@@ -28,8 +28,10 @@ __ev_once(){ event off "$3" "$2" __ev_once "${@:1:$1+2}"; "${@:4}";}
 __ev_jit(){
 	local r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
 	while [[ "$s" ]]; do
-		r=${s::1};s=${s//$r/};printf -v r 'REPLY=${REPLY//%q/_%02x_};' "$r" "'$r";eval "$r";__ev_jit+=$r
+		r=${s::1};s=${s//$r/};printf -v r 'REPLY=${REPLY//%q/_%02x};' "$r" "'$r";eval "$r";__ev_jit+=$r
 	done
-	eval '__ev.encode(){ local LC_ALL=C;REPLY=${1//_/__};'\
+	eval '__ev.encode(){ local LC_ALL=C;REPLY=${1//_/_5f};'\
 	"${__ev_jit-}"' [[ $REPLY != *[^_[:alnum:]]* ]] || __ev_jit "${REPLY//[_[:alnum:]]/}";}'
 };__ev_jit ''
+__ev.decode(){ REPLY=();while (($#));do printf -v REPLY[${#REPLY[@]}] %b "${1//_/\\x}";shift;done;}
+__ev.list(){ eval 'set -- "${!'"$e"'@}"';__ev.decode "${@#bashup_event_}";}
