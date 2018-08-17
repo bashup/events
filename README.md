@@ -357,12 +357,19 @@ For performance reasons, the function that handles event encoding is JITted.  Ev
 
 #### event list
 
-`event list` *prefix* sets `REPLY` to an array of currently-defined event names beginning with *prefix*.
+`event list` *prefix* sets `REPLY` to an array of currently-defined event names beginning with *prefix*.  events that currently have listeners are returned, as are resolved events.
 
 ````sh
-    $ event list "event" && printf '%s\n' "${REPLY[@]}"
-    event1
-    event2
+# event1 and event2 no longer have subscribers:
+
+    $ event list "event" && echo "${#REPLY[@]}"
+    0
+
+# But there are some events starting with "p"
+
+    $ event list "p" && printf '%s\n' "${REPLY[@]}"
+    password_check
+    promised
 
     $ event list "lookup" && printf '%s\n' "${REPLY[@]}"
     lookup

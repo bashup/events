@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 event(){ case $1 in error|quote|encode|decode);; *)
-	__ev.encode "${2-}";local f n='' e=bashup_event_$REPLY;f=${e/event/flag}
+	__ev.encode "${2-}";local f n='' e=bashup_event_$REPLY'[1]';f=${e/event/flag}
 	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|once|off|has)
 		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
@@ -14,13 +14,14 @@ __ev.error(){ echo "$1">&2;return "${2:-64}";}
 __ev.quote(){ REPLY=; ${@+printf -v REPLY ' %q' "$@"}; REPLY=${REPLY# };}
 __ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* && ! ${!f-} ]];}
 __ev.on(){ __ev.has && return;if [[ ! ${!f-} ]];then eval "$e"+='$REPLY';else eval "${!e-};$REPLY";fi;}
-__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';}
-__ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
+__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';[[ ${!e} ]]||unset "${e%\[1]}";}
+__ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "unset ${1%\[1]};${!1}"; done ;}
 __ev.all(){ ${!f-};e=${!e-};eval "${e//$'\n'/||return; }";}
 __ev.any(){ ${!f-};e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
 __ev.resolve(){
 	${!f-};__ev.fire "$@";__ev.quote "$@"
-	readonly "$f=eval __ev.error 'event \"'$1'\" already resolved' 70;return" "$e=set -- $REPLY"
+	printf -v n "eval __ev.error 'event \"%s\" already resolved' 70;return" "$1"; eval "${f}"='$n'
+	printf -v n 'set -- %s' "$REPLY"; eval "${e}"='$n';readonly "${f%\[1]}" "${e%\[1]}"
 }
 __ev.resolved(){ [[ ${!f-} ]];}
 __ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" "@$n" __ev_once $# "@$n" "$@";}
@@ -34,4 +35,4 @@ __ev_jit(){
 	"${__ev_jit-}"' [[ $REPLY != *[^_[:alnum:]]* ]] || __ev_jit "${REPLY//[_[:alnum:]]/}";}'
 };__ev_jit ''
 __ev.decode(){ REPLY=();while (($#));do printf -v REPLY[${#REPLY[@]}] %b "${1//_/\\x}";shift;done;}
-__ev.list(){ eval 'set -- "${!'"$e"'@}"';__ev.decode "${@#bashup_event_}";}
+__ev.list(){ eval 'set -- "${!'"${e%\[1]}"'@}"';__ev.decode "${@#bashup_event_}";}
