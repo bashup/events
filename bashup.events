@@ -16,8 +16,8 @@ __ev.error(){ echo "$1">&2;return "${2:-64}";}
 __ev.quote(){ REPLY=("${*@Q}");}
 __ev.has(){ [[ ${e-} && $'\n'"$e" == *$'\n'"$REPLY"* && ! ${f-} ]];}
 __ev.on(){ __ev.has&&return;if [[ ! ${f-} ]];then e+="$REPLY";else eval "${e-};$REPLY";fi;}
-__ev.off(){ __ev.has||return 0;n="${e#"$REPLY"}";e="${n//$'\n'"$REPLY"/$'\n'}";}
-__ev.fire(){ ${f-}||return;set -- "$s" "${@:2}";while [[ ${bashup_ev["$1"]-} ]];do eval 'bashup_ev["$1"]=;'"${bashup_ev["$1"]}";done;}
+__ev.off(){ __ev.has||return 0;n="${e#"$REPLY"}";e="${n//$'\n'"$REPLY"/$'\n'}";[[ $e ]]||unset bashup_ev["$1"];}
+__ev.fire(){ ${f-}||return;set -- "$s" "${@:2}";while [[ ${bashup_ev["$1"]-} ]];do eval 'unset bashup_ev["$1"];'"${bashup_ev["$1"]}";done;}
 __ev.all(){ ${f-}||return;n=${e-};eval "${n//$'\n'/||return;}";}
 __ev.any(){ ${f-}||return;n=${e-};eval "${n//$'\n'/&&return|| } ! :";}
 __ev.resolve(){ ${f-}||return;__ev.fire "$@";__ev.quote "$@";bashup_ev_r["$1"]=__ev_already;bashup_ev["$1"]="set -- $REPLY";}

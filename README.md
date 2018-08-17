@@ -51,10 +51,10 @@ Copy and paste the [code](bashup.events) into your script, or place it on `PATH`
 
 This version of bashup.events requires bash 4.4+.  If you need to support older bash versions, you can use the bash32 branch, which still supports bash 3.2 and up, using no bash 4 features.  Besides the supported bash version, the differences between the two versions are:
 
-* The 3.2+ version is slower: only around 10K emits/second, even when run with a newer bash
+* The 3.2+ version is a bit larger and a lot slower: only around 10K emits/second, even when run with a newer bash.
 * The 3.2+ version of `event list` returns sorted keys; this version does not give a guaranteed order
 * The two versions differ slightly in the output of `event quote`, since one uses `printf %q` and the other `@Q` substitution  (both however, output strings that are compatible with any bash version).
-* The 4.4+ version uses associative arrays; the 3.2+ version emulates them using individual variables with urlencoded names.  Among other things, this means that the 3.2+ version can mask specific events with `local`, or inherit event handlers from parent processes if they're exported to the enviornment.  The 4.4 version cannot do either of those things.
+* The 4.4+ version uses associative arrays; the 3.2+ version emulates them using individual variables with urlencoded names.  Among other things, this means that the 3.2+ version can mask specific events with `local`, but the 4.4 version cannot.
 * Other performance characteristics vary, as they use different `event encode` implementations with different performance characteristics.  (4.4's is tuned for reasonable performance regardless of character set, while 3.2's is tuned for speed at all costs with a small character set.)
 
 ### Basic Operations
@@ -346,6 +346,17 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
     foo_2ebar
     $ event encode "foo_bar" && echo $REPLY
     foo_5fbar
+
+    $ event encode ' !"#$%'\''()*+,-./:;<=>?@[\]^_`' && echo "$REPLY"
+    _20_21_22_23_24_25_27_28_29_2a_2b_2c_2d_2e_2f_3a_3b_3c_3d_3e_3f_40_5b_5c_5d_5e_5f_60
+
+    $ event encode $'\x01\x02\x03\x04\x05\x06\x07\b\t\n\x0b\f\r\x0e\x0f\x10' &&
+    >  echo "$REPLY"
+    _01_02_03_04_05_06_07_08_09_0a_0b_0c_0d_0e_0f_10
+
+    $ event encode $'{|}~\x7f' && echo "$REPLY"
+    _7b_7c_7d_7e_7f
+
 ````
 
 #### event decode
@@ -363,12 +374,19 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
 #### event list
 
-`event list` *prefix* sets `REPLY` to an array of currently-defined event names beginning with *prefix*.
+`event list` *prefix* sets `REPLY` to an array of currently-defined event names beginning with *prefix*.  events that currently have listeners are returned, as are resolved events.
 
 ````sh
-    $ event list "event" && printf '%s\n' "${REPLY[@]}"
-    event1
-    event2
+# event1 and event2 no longer have subscribers:
+
+    $ event list "event" && echo "${#REPLY[@]}"
+    0
+
+# But there are some events starting with "p"
+
+    $ event list "p" && printf '%s\n' "${REPLY[@]}" | sort
+    password_check
+    promised
 
     $ event list "lookup" && printf '%s\n' "${REPLY[@]}"
     lookup
