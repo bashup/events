@@ -1,37 +1,31 @@
 #!/usr/bin/env bash
+# shellcheck disable=2016,2034,2059,2128,2145
+{ declare -gA bashup_ev bashup_ev_r
 event(){ case $1 in error|quote|encode|decode);; *)
-	__ev.encode "${2-}";local f n='' e=bashup_event_$REPLY;f=${e/event/flag}
-	case $1 in emit) shift;${!f-};eval "${!e-}"; return ;;on|once|off|has)
+	local n='' s=${2:-_};local -n e=bashup_ev["$s"] f=bashup_ev_r["$s"]
+	case $1 in emit) shift;${f-}||return;eval "${e-}";return;; on|once|off|has)
 		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
-			has/[12]) REPLY=;; */[12]) set -- error "${2-}: missing callback";;
+			has/[12]) REPLY=;; */[12]) set -- error "${2:-}: missing callback";;
 			*) __ev.quote "${@:3}";((${n/\$#/1}))&&REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
 		esac
 	esac
 esac ;__ev."$@";}
 __ev.error(){ echo "$1">&2;return "${2:-64}";}
-__ev.quote(){ REPLY=; ${@+printf -v REPLY ' %q' "$@"}; REPLY=${REPLY# };}
-__ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* && ! ${!f-} ]];}
-__ev.on(){ __ev.has && return;if [[ ! ${!f-} ]];then eval "$e"+='$REPLY';else eval "${!e-};$REPLY";fi;}
-__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';}
-__ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "$1=;${!1}"; done ;}
-__ev.all(){ ${!f-};e=${!e-};eval "${e//$'\n'/||return; }";}
-__ev.any(){ ${!f-};e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
-__ev.resolve(){
-	${!f-};__ev.fire "$@";__ev.quote "$@"
-	readonly "$f=eval __ev.error 'event \"'$1'\" already resolved' 70;return" "$e=set -- $REPLY"
-}
-__ev.resolved(){ [[ ${!f-} ]];}
+__ev.quote(){ REPLY=("${*@Q}");}
+__ev.has(){ [[ ${e-} && $'\n'"$e" == *$'\n'"$REPLY"* && ! ${f-} ]];}
+__ev.on(){ __ev.has&&return;if [[ ! ${f-} ]];then e+="$REPLY";else eval "${e-};$REPLY";fi;}
+__ev.off(){ __ev.has||return 0;n="${e#"$REPLY"}";e="${n//$'\n'"$REPLY"/$'\n'}";}
+__ev.fire(){ ${f-}||return;set -- "$s" "${@:2}";while [[ ${bashup_ev["$1"]-} ]];do eval 'bashup_ev["$1"]=;'"${bashup_ev["$1"]}";done;}
+__ev.all(){ ${f-}||return;n=${e-};eval "${n//$'\n'/||return;}";}
+__ev.any(){ ${f-}||return;n=${e-};eval "${n//$'\n'/&&return|| } ! :";}
+__ev.resolve(){ ${f-}||return;__ev.fire "$@";__ev.quote "$@";bashup_ev_r["$1"]=__ev_already;bashup_ev["$1"]="set -- $REPLY";}
+__ev_already() { __ev.error "event \"$s\" already resolved" 70;}
+__ev.resolved(){ [[ ${f-} ]];}
 __ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" "@$n" __ev_once $# "@$n" "$@";}
 __ev_once(){ event off "$3" "$2" __ev_once "${@:1:$1+2}"; "${@:4}";}
-__ev_jit(){
-	local r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
-	while [[ "$s" ]]; do
-		r=${s::1};s=${s//$r/};printf -v r 'REPLY=${REPLY//%q/_%02x};' "$r" "'$r";eval "$r";__ev_jit+=$r
-	done
-	eval '__ev.encode(){ local LC_ALL=C;REPLY=${1//_/_5f};'\
-	"${__ev_jit-}"' [[ $REPLY != *[^_[:alnum:]]* ]] || __ev_jit "${REPLY//[_[:alnum:]]/}";}'
-};__ev_jit ''
+__ev.encode(){ local LC_ALL=C;n=${1//[![:alnum:]]/_%02x};s=${1//[[:alnum:]]};[[ $s =~ ${s//?/(.)} ]];set -- "${BASH_REMATCH[@]:1}";printf -v REPLY "$n" "${@/#/\'}";}
 __ev.decode(){ REPLY=();while (($#));do printf -v REPLY[${#REPLY[@]}] %b "${1//_/\\x}";shift;done;}
-__ev.list(){ eval 'set -- "${!'"$e"'@}"';__ev.decode "${@#bashup_event_}";}
+__ev.list(){ REPLY=("${!bashup_ev[@]}");[[ $1 ]]||return 0;s=$1;set -- "${REPLY[@]}";REPLY=();for n;do [[ $n == "$s"* ]]||continue;REPLY+=("$n");done;}
+}

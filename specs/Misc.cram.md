@@ -19,6 +19,7 @@ e.g. What happens if you don't pass a callback to event on, .has, or .off?
 
     $ ( event has x ) || echo [$?]
     [1]
+
     $ event on x echo y
 
     $ ( event has x ); echo [$?]
@@ -62,7 +63,7 @@ Or an invalid arg indicator to has/on/off? (they're considered part of the comma
 ````sh
     $ event on bar @9.2 quiz
     $ event emit bar || echo [$?]
-    */bashup.events: line 4: @9.2: command not found (glob)
+    */bashup.events: line ?: @9.2: command not found (glob)
     [127]
 ````
 
