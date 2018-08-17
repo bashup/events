@@ -27,12 +27,12 @@ __ev.resolved(){ [[ ${!f-} ]];}
 __ev.once(){ n=${n:-0} n=${n/\$#/_}; event on "$1" "@$n" __ev_once $# "@$n" "$@";}
 __ev_once(){ event off "$3" "$2" __ev_once "${@:1:$1+2}"; "${@:4}";}
 __ev_jit(){
-	local r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
+	local q r=${__ev_jit-} s=$1;((${#r}<250))||__ev_jit=
 	while [[ "$s" ]]; do
-		r=${s::1};s=${s//$r/};printf -v r 'REPLY=${REPLY//%q/_%02x};' "$r" "'$r";eval "$r";__ev_jit+=$r
+		r=${s::1};s=${s:1};printf -v q %q "$r";eval 's=${s//'"$q}";printf -v r 'REPLY=${REPLY//%s/_%02x};' "${q/#[~]/[~]}" "'$r";eval "$r";__ev_jit+="$r"
 	done
 	eval '__ev.encode(){ local LC_ALL=C;REPLY=${1//_/_5f};'\
 	"${__ev_jit-}"' [[ $REPLY != *[^_[:alnum:]]* ]] || __ev_jit "${REPLY//[_[:alnum:]]/}";}'
 };__ev_jit ''
-__ev.decode(){ REPLY=();while (($#));do printf -v REPLY[${#REPLY[@]}] %b "${1//_/\\x}";shift;done;}
+__ev.decode(){ REPLY=();while (($#));do printf -v n %b "${1//_/\\x}";REPLY+=("$n");shift;done;}
 __ev.list(){ eval 'set -- "${!'"${e%\[1]}"'@}"';__ev.decode "${@#bashup_event_}";}

@@ -338,6 +338,17 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
     foo_2ebar
     $ event encode "foo_bar" && echo $REPLY
     foo_5fbar
+
+    $ event encode ' !"#$%'\''()*+,-./:;<=>?@[\]^_`' && echo "$REPLY"
+    _20_21_22_23_24_25_27_28_29_2a_2b_2c_2d_2e_2f_3a_3b_3c_3d_3e_3f_40_5b_5c_5d_5e_5f_60
+
+    $ event encode $'\x01\x02\x03\x04\x05\x06\x07\b\t\n\x0b\f\r\x0e\x0f\x10' &&
+    >  echo "$REPLY"
+    _01_02_03_04_05_06_07_08_09_0a_0b_0c_0d_0e_0f_10
+
+    $ event encode $'{|}~\x7f' && echo "$REPLY"
+    _7b_7c_7d_7e_7f
+
 ````
 
 For performance reasons, the function that handles event encoding is JITted.  Every time new non-ASCII or non-alphanumeric characters are seen, the function is rewritten to efficiently handle encoding them.  This makes encoding extremely fast when a program only ever uses a handful of punctuation characters in event names or strings passed to `event encode`.  Encoding arbitrary strings (or using them as event names) is not recommended, however, since this will "train" the encoder to run more slowly for *all* `event` operations from then on.
