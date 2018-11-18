@@ -1,6 +1,6 @@
 # Practical Event Listeners for Bash
 
-`bashup.events` is an event listener/callback API for creating extensible bash programs.  It's small (<2k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any string can be an event name.  (You can even have "[promises](#promise-like-events)", of a sort!)  Callbacks can be any command or function plus any number of arguments, and can even opt to receive [additional arguments supplied by the event](#passing-arguments-to-callbacks).
+`bashup.events` is an event listener/callback API for creating extensible bash programs.  It's small (<2.2k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any string can be an event name.  (You can even have "[promises](#promise-like-events)", of a sort!)  Callbacks can be any command or function plus any number of arguments, and can even opt to receive [additional arguments supplied by the event](#passing-arguments-to-callbacks).
 
 Other features include:
 
@@ -34,6 +34,7 @@ Other features include:
   * [event once](#event-once)
   * [event encode](#event-encode)
   * [event decode](#event-decode)
+  * [event get](#event-get)
   * [event list](#event-list)
   * [event quote](#event-quote)
   * [event error](#event-error)
@@ -84,12 +85,16 @@ Event names can be any string, but performance is best if you limit them to pure
 
 #### event off
 
-`event off` *event cmd [args...]* unsubscribes the *cmd args...* callback from *event*
+`event off` *event [cmd [args...]]* unsubscribes the *cmd args...* callback from *event*.  If no callback is given, *all* callbacks are removed.
 
 ````sh
     $ event off "event1" echo "got event1"
     $ event emit "event1"
     is this cool or what?
+
+    $ event on "event2" echo foo
+    $ event off "event2"
+    $ event emit "event2"
 ````
 
 #### event has
@@ -373,6 +378,23 @@ For performance reasons, the function that handles event encoding is JITted.  Ev
     /spim
     +spam
 ````
+
+#### event get
+
+`event get` *event* sets `$REPLY` to a string that can be `eval`'d to do the equivalent of `event emit "event" "${@:2}"`.  This can be used for debugging, or to allow callbacks like `local` to be run in a specific calling context.  An error 70 is returned if *event* is resolved.
+
+~~~sh
+    $ event get lookup && echo "$REPLY"
+    match a got\ one\! "${@:2:1}"
+    match b number\ two "${@:2:1}"
+    match c third\ time\'s\ the\ charm "${@:2:1}"
+    
+    $ event get "promised" && echo "$REPLY"
+    event "promised" already resolved
+    [70]
+~~~
+
+(Notice that the encoded commands in `$REPLY` reference parameters beginning with `"$2"`, which means that if you want to eval them with `"$@"` you'll need to unshift a dummy argument.)
 
 #### event list
 

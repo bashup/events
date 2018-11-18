@@ -5,7 +5,7 @@ event(){ case $1 in error|quote|encode|decode);; *)
 		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
-			has/[12]) REPLY=;; */[12]) set -- error "${2-}: missing callback";;
+			on*/[12]) set -- error "${2-}: missing callback";; */[12]) REPLY=;;
 			*) __ev.quote "${@:3}";((${n/\$#/1}))&&REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
 		esac
 	esac
@@ -13,8 +13,9 @@ esac ;__ev."$@";}
 __ev.error(){ echo "$1">&2;return "${2:-64}";}
 __ev.quote(){ REPLY=; ${@+printf -v REPLY ' %q' "$@"}; REPLY=${REPLY# };}
 __ev.has(){ [[ ${!e-} && $'\n'"${!e}" == *$'\n'"$REPLY"* && ! ${!f-} ]];}
+__ev.get(){ ${!f-};REPLY=${!e-};}
 __ev.on(){ __ev.has && return;if [[ ! ${!f-} ]];then eval "$e"+='$REPLY';else eval "${!e-};$REPLY";fi;}
-__ev.off(){ __ev.has||return 0; n="${!e}"; n=${n#"$REPLY"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';[[ ${!e} ]]||unset "${e%\[1]}";}
+__ev.off(){ __ev.has||return 0; n="${!e}"; n=${REPLY:+"${n#"$REPLY"}"}; eval "$e"=$'"${n//\n"$REPLY"/\n}"';[[ ${!e} ]]||unset "${e%\[1]}";}
 __ev.fire(){ ${!f-};set -- "$e" "${@:2}"; while [[ ${!1-} ]];do eval "unset ${1%\[1]};${!1}"; done ;}
 __ev.all(){ ${!f-};e=${!e-};eval "${e//$'\n'/||return; }";}
 __ev.any(){ ${!f-};e=${!e-};eval "${e//$'\n'/&&return|| } ! :";}
