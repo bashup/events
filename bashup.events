@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=2016,2034,2059,2128,2145
+# shellcheck disable=2016,2034,2059,2128,2145,2178
 { declare -gA bashup_ev bashup_ev_r
 event(){ case $1 in error|quote|encode|decode);; *)
 	local n='' s=${2:-_};local -n e=bashup_ev["$s"] f=bashup_ev_r["$s"]
@@ -7,7 +7,7 @@ event(){ case $1 in error|quote|encode|decode);; *)
 		case "${3-}" in @_) n='$#';; @*[^0-9]*);; @[0-9]*) n=$((${3#@}));; esac; ${n:+
 		set -- "$1" "$2" "${@:4}" }
 		case $1/$# in
-			has/[12]) REPLY=;; */[12]) set -- error "${2:-}: missing callback";;
+			on*/[12]) set -- error "${2:-}: missing callback";; */[12]) REPLY=;;
 			*) __ev.quote "${@:3}";((${n/\$#/1}))&&REPLY+=' "${@:2:'"$n"'}"';REPLY+=$'\n'
 		esac
 	esac
@@ -15,8 +15,9 @@ esac ;__ev."$@";}
 __ev.error(){ echo "$1">&2;return "${2:-64}";}
 __ev.quote(){ REPLY=("${*@Q}");}
 __ev.has(){ [[ ${e-} && $'\n'"$e" == *$'\n'"$REPLY"* && ! ${f-} ]];}
+__ev.get(){ ${f-}&&REPLY=${e-};}
 __ev.on(){ __ev.has&&return;if [[ ! ${f-} ]];then e+="$REPLY";else eval "${e-};$REPLY";fi;}
-__ev.off(){ __ev.has||return 0;n="${e#"$REPLY"}";e="${n//$'\n'"$REPLY"/$'\n'}";[[ $e ]]||unset bashup_ev["$1"];}
+__ev.off(){ __ev.has||return 0;n=${REPLY:+"${e#"$REPLY"}"};e="${n//$'\n'"$REPLY"/$'\n'}";[[ $e ]]||unset bashup_ev["$1"];}
 __ev.fire(){ ${f-}||return;set -- "$s" "${@:2}";while [[ ${bashup_ev["$1"]-} ]];do eval 'unset bashup_ev["$1"];'"${bashup_ev["$1"]}";done;}
 __ev.all(){ ${f-}||return;n=${e-};eval "${n//$'\n'/||return;}";}
 __ev.any(){ ${f-}||return;n=${e-};eval "${n//$'\n'/&&return|| } ! :";}
