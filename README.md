@@ -54,7 +54,6 @@ This version of bashup.events requires bash 4.4+.  If you need to support older 
 
 * The 3.2+ version is a bit larger and a lot slower: only around 10K emits/second, even when run with a newer bash.
 * The 3.2+ version of `event list` returns sorted keys; this version does not give a guaranteed order
-* The two versions differ slightly in the output of `event quote`, since one uses `printf %q` and the other `@Q` substitution  (both however, output strings that are compatible with any bash version).
 * The 4.4+ version uses associative arrays; the 3.2+ version emulates them using individual variables with urlencoded names.  Among other things, this means that the 3.2+ version can mask specific events with `local`, but the 4.4 version cannot.
 * Other performance characteristics vary, as they use different `event encode` implementations with different performance characteristics.  (4.4's is tuned for reasonable performance regardless of character set, while 3.2's is tuned for speed at all costs with a small character set.)
 
@@ -383,9 +382,9 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
 ~~~sh
     $ event get lookup && echo "$REPLY"
-    'match' 'a' 'got one!' "${@:2:1}"
-    'match' 'b' 'number two' "${@:2:1}"
-    'match' 'c' 'third time'\''s the charm' "${@:2:1}"
+    match a got\ one\! "${@:2:1}"
+    match b number\ two "${@:2:1}"
+    match c third\ time\'s\ the\ charm "${@:2:1}"
     
     $ event get "promised" && echo "$REPLY"
     event "promised" already resolved
@@ -420,11 +419,11 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
 
 ````sh
     $ event quote a b c && echo "$REPLY"
-    'a' 'b' 'c'
+    a b c
     $ event quote "a b c" && echo "$REPLY"
-    'a b c'
+    a\ b\ c
     $ event quote x "" y && echo "$REPLY"
-    'x' '' 'y'
+    x '' y
     $ event quote && echo "'$REPLY'"
     ''
 ````
