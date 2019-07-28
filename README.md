@@ -38,6 +38,7 @@ Other features include:
   * [event list](#event-list)
   * [event quote](#event-quote)
   * [event error](#event-error)
+- [Event Handlers and Subshells](#event-handlers-and-subshells)
 - [License](#license)
 
 <!-- tocstop -->
@@ -438,7 +439,11 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
     [127]
 ````
 
+### Event Handlers and Subshells
 
+Just as with bash variables and functions, the current event handlers and the state of promises are inherited by subshells (e.g. in command substitutions), but changes made by a subshell do not affect the state of the calling shell.  (As should be expected given that subshells are forked processes without shared memory or other interprocess communication by default.)
+
+Note that this means adding or removing handlers in a subshell (even _implicitly_, via `fire`, `resolve`, `once`, etc.) has **no effect** on the calling shell.  As is normally the case for subshells, you’ll need to read their output and act on it, if you need to apply side-effects in the calling process.
 
 ### License
 
