@@ -13,7 +13,7 @@ event(){ case $1 in error|quote|encode|decode);; *)
 	esac
 esac ;__ev."$@";}
 __ev.error(){ echo "$1">&2;return "${2:-64}";}
-__ev.quote(){ REPLY=; ${@+printf -v REPLY ' %q' "$@"}; REPLY=${REPLY# };}
+__ev.quote(){ builtin printf -v REPLY "${*/*/%q}" "$@";}
 __ev.has(){ [[ ${e-} && $'\n'"$e" == *$'\n'"$REPLY"* && ! ${f-} ]];}
 __ev.get(){ ${f-}&&REPLY=${e-};}
 __ev.on(){ __ev.has&&return;if [[ ! ${f-} ]];then e+="$REPLY";else eval "${e-};$REPLY";fi;}
