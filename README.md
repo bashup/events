@@ -1,6 +1,6 @@
 # Practical Event Listeners for Bash
 
-`bashup.events` is an event listener/callback API for creating extensible bash programs.  It's small (<2.2k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any string can be an event name.  (You can even have "[promises](#promise-like-events)", of a sort!)  Callbacks can be any command or function plus any number of arguments, and can even opt to receive [additional arguments supplied by the event](#passing-arguments-to-callbacks).
+`bashup.events` is an event listener/callback API for creating extensible bash programs.  It's small (~2k), fast (~10k events/second), and highly portable (no bash4-isms or external programs used).  Events can be one-time or repeated, listeners can be added or removed, and any string can be an event name.  (You can even have "[promises](#promise-like-events)", of a sort!)  Callbacks can be any command or function plus any number of arguments, and can even opt to receive [additional arguments supplied by the event](#passing-arguments-to-callbacks).
 
 Other features include:
 
@@ -56,13 +56,12 @@ This version of bashup.events works with bash 3.2+.  If you don't need to suppor
 * The 3.2+ version is a bit larger and a lot slower: only around 10K emits/second, even when run with a newer bash.
 * The 3.2+ version of `event list` returns sorted keys; the 4.4 version does not give a guaranteed order
 * The 4.4+ version uses associative arrays; the 3.2+ version emulates them using individual variables with urlencoded names.  Among other things, this means that the 3.2+ version can mask specific events with `local`, but the 4.4 version cannot.
-* Other performance characteristics vary, as they use different `event encode` implementations with different performance characteristics.  (4.4's is tuned for reasonable performance regardless of character set, while 3.2's is tuned for speed at all costs with a small character set.)
 
 ### Basic Operations
 
 Sourcing `bashup.events` exposes one public function, `event`, that provides a variety of subcommands.  All of the primary subcommands take an event name as their first argument.
 
-Event names can be any string, but performance is best if you limit them to pure ASCII alphanumeric or `_` characters, as all other characters have to be encoded at the start of each event command.  (And the larger the character set used, the slower the encoding process becomes.)
+Event names can be any string, but performance is best if you limit them to pure ASCII alphanumeric or `_` characters, as all other characters have to be encoded at the start of each event command.  (And the more special characters used, the slower the encoding process becomes.)
 
 #### event on
 
@@ -363,8 +362,6 @@ There is no way to "unresolve" a resolved event within the current shell.  Tryin
     _7b_7c_7d_7e_7f
 
 ````
-
-For performance reasons, the function that handles event encoding is JITted.  Every time new non-ASCII or non-alphanumeric characters are seen, the function is rewritten to efficiently handle encoding them.  This makes encoding extremely fast when a program only ever uses a handful of punctuation characters in event names or strings passed to `event encode`.  Encoding arbitrary strings (or using them as event names) is not recommended, however, since this will "train" the encoder to run more slowly for *all* `event` operations from then on.
 
 #### event decode
 

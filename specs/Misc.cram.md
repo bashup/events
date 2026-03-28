@@ -62,7 +62,7 @@ Or an invalid arg indicator to has/on/off? (they're considered part of the comma
 ````sh
     $ event on bar @9.2 quiz
     $ event emit bar || echo [$?]
-    */bashup.events: line 4: @9.2: command not found (glob)
+    */bashup.events: line 5: @9.2: command not found (glob)
     [127]
 ````
 
